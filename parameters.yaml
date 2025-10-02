@@ -1,17 +1,114 @@
-# Those are the paths to the data files. Use glob patterns.
-## Please use a valid path for ALL data paths. Data paths should not be empty.
-data_paths:
-  U: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridU.nc
-  V: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridV.nc
-  T: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridT.nc
-  W: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridW.nc
+# =============================================
+# Experiment metadata
+# =============================================
+experiment:
+  name: "oil_spill_simulation"
+  description: "Oil spill simulation for January 2006, ANHA4"
+  date: "2006-01"
 
-# These are parameters for xarray when opening datasets.
-xarray_parameters:
-  reader_parameters:
-    combine: "by_coords"
-    data_vars: "all"
+# =============================================
+# Input data configuration
+# =============================================
+input_data:
+  data_paths:
+    U: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridU.nc
+    V: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridV.nc
+    T: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridT.nc
+    W: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridW.nc
 
-output_paths:
-  output_dir: /mnt/storage7/caio/fall_2025/output
-  output_file: oil_spill_simulation.nc
+  ancillary_paths:
+    mask: /mnt/storage4/tahya/runoff/runoff_comp_regions.nc
+
+
+# =============================================
+# Data transformations
+# =============================================
+transformations:
+  interpolation:
+    target_grid: T           # Target grid for interpolation (U, V, T, or W)
+    dimensions:              # Dimensions to use for interpolation
+      U: x_grid_U
+      V: x_grid_V
+      W: grid_W_3D_inner
+    variables:               # Variables to keep after interpolation
+      U: "vozocrtx"
+      V: "vomecrty"
+      W: "vovecrtz"
+  # Variable, coordinate and dimensions renaming
+  renaming:
+    T:
+      x_grid_T: X
+      y_grid_T: Y
+    U: 
+      x_grid_U: X
+      y_grid_U: Y
+      depthu: deptht
+    V:
+      x_grid_V: X
+      y_grid_V: Y
+      depthv: deptht
+    W:
+      y: Y
+      x: X
+  attributes_to_add:
+    file: 
+      title: "NEMO ANHA4-EPM520 + OpenDrift"
+      institution: "University of Alberta"
+      source: "NEMO ocean model"
+      comment: "This dataset has been processed for oil spill simulation using OpenDrift."
+    variables:
+      u:
+        standard_name: "x_sea_water_velocity"
+      v:
+        standard_name: "y_sea_water_velocity"
+      w:
+        standard_name: "z_sea_water_velocity"
+      deptht:
+        standard_name: "depth"
+
+  # Slicing data for region of interest
+  slicing:
+    region_of_interest:
+      Y: [530, 750]
+      X: [120, 430]
+
+  # Variables and coordinates to keep
+  keep:
+    vars: ["u", "v", "w", "temp", "salt", "ssh", "land_binary_mask", "deptht"]
+    coords: ["X", "Y", "deptht", "time_counter", "nav_lon_grid_T", "nav_lat_grid_T"]
+
+# =============================================
+# Xarray
+# =============================================
+xarray:
+  engine: netcdf4               # Engine used for reading NetCDF
+  reader:
+    combine: "by_coords"       # Combine multiple files by coordinates
+    data_vars: "all"           # Load all variables
+
+# =============================================
+# OpenDrift configuration
+# =============================================
+# Only provide parameters you want to override; all others use OpenDrift defaults.
+opendrift:
+  dataset:
+    name: "NEMO dataset"       # Dataset name used by OpenDrift
+  log_level: 20              # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
+  seeding:
+    lon: -100                   # Initial longitude of particles
+    lat: 81                     # Initial latitude of particles
+    number: 1000                # Number of particles
+    radius: 10000               # Initial release radius in meters
+    z: 0                        # Initial depth (0 = surface)
+    time: "2006-01-03T00:00"    # Simulation start time
+    oil_type: "GENERIC DIESEL"  # Type of oil
+
+# =============================================
+# Output configuration
+# =============================================
+output:
+  directory: /mnt/storage7/caio/fall_2025/output  # Directory to save output files
+  files:
+    netcdf: "{experiment}_{date}.nc"            # NetCDF result file
+    animation: "{experiment}_{date}.mp4"       # Spill animation
+    log: "{experiment}_{date}.log"             # Log file

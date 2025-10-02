@@ -1,41 +1,43 @@
 # stdlib
 from datetime import timedelta
-import pprint
-import xarray as xr
-import numpy as np
+from pprint import pprint
 
 # opendrift
 from opendrift.models.openoil import OpenOil
 from opendrift.readers.reader_netCDF_CF_generic import Reader
 
 # local
-from oil_spill.dataset_utils import DatasetHandler, NemoConverter
+from oil_spill.dataset_utils import DatasetHandler
 from oil_spill.reader import DatasetReader
+from oil_spill.utils import set_configuration
+from oil_spill.config import ConfigReader
 
-
-def set_configuration(o: OpenOil):
-    # o.set_config('general:use_auto_landmask', False)
-    o.set_config("environment:fallback:x_wind", 3)
-    o.set_config("environment:fallback:y_wind", -7)
-    # o.set_config("drift:vertical_mixing", True)
-    # o.set_config("seed:droplet_size_distribution", "uniform")
-    # o.set_config("seed:droplet_diameter_min_subsea", 0.0001)
-    # o.set_config("seed:droplet_diameter_max_subsea", 0.0005)
 
 def run():
-    o = OpenOil(loglevel=0)
-    dr = DatasetReader()
-    dh = DatasetHandler()
-    nc = NemoConverter()
-    ds_U, ds_V, ds_T, ds_W = dr.read()
+    # Load configuration
+    config = ConfigReader.from_yaml("parameters.yaml")
 
-    combined_ds = nc.adapt_dataset(ds_U, ds_V, ds_T, ds_W)
+    o = OpenOil(loglevel=config.opendrift.log_level)
+
+    dr = DatasetReader(data_paths=config.input_data.data_paths, xarray_parameters=config.xarray_parameters)
+    dh = DatasetHandler(
+        interpolation=config.transformations.interpolation,
+        renaming=config.transformations.renaming,
+        attributes_to_add=config.transformations.attributes_to_add,
+        slicing=config.transformations.slicing,
+        keep=config.transformations.keep,
+    )
+    datasets = dr.read_multi_files()
+
+    combined_ds = dh.create_combined_dataset(datasets)
 
     combined_ds = dh.add_mask(combined_ds)
 
     combined_ds = dh.clean_dataset(combined_ds)
 
-    combined_ds = dh.select_subset_of_data(combined_ds, {"Y": slice(530, 750), "X": slice(120, 430)})
+    combined_ds = dh.select_subset_of_data(combined_ds)
+    print(combined_ds)
+    raise
 
     T_reader = Reader(combined_ds, name="NEMO dataset")
 
@@ -46,7 +48,7 @@ def run():
     o.seed_elements(lon=-100, lat=81, number=1000, radius=10000, time=T_reader.start_time, oil_type="GENERIC DIESEL")
 
     o.run()
-    o.plot(filename="oil_spill/output/plots/oil_spill_simulation.png", linecolor='z')
+    o.plot(filename="oil_spill/output/plots/oil_spill_simulation.png", linecolor="z")
 
     o.animation(filename="oil_spill/output/animations/oil_spill_simulation.mp4", fast=True)
 

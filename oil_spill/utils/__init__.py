@@ -1,0 +1,1 @@
+from oil_spill.utils.set_configuration import set_configuration
