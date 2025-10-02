@@ -59,3 +59,43 @@ class NemoConverter:
         Y_coord = Y_m[:, 0]
 
         return X_coord, Y_coord
+
+    def adapt_dataset(self, ds_U: xr.Dataset, ds_V: xr.Dataset, ds_T: xr.Dataset, ds_W: xr.Dataset):
+        ds_T = ds_T.rename(
+            {
+                "x_grid_T": "X",
+                "y_grid_T": "Y",
+            }
+        )
+
+        u = self.interpolate(
+            data_array=ds_U["vozocrtx"],
+            dimension_slice_start={"x_grid_U": slice(0, -1)},
+            dimension_slice_end={"x_grid_U": slice(1, None)},
+            dimension_to_add_nan="x_grid_U",
+            map_rename={"x_grid_U": "X", "y_grid_U": "Y", "depthu": "deptht"},
+        )
+        v = self.interpolate(
+            data_array=ds_V["vomecrty"],
+            dimension_slice_start={"y_grid_V": slice(0, -1)},
+            dimension_slice_end={"y_grid_V": slice(1, None)},
+            dimension_to_add_nan="y_grid_V",
+            map_rename={"x_grid_V": "X", "y_grid_V": "Y", "depthv": "deptht"},
+        )
+        w = self.interpolate_w(ds_W, ds_T["deptht"])
+        # w = nc.interpolate(
+        #     data_array=ds_W["vovecrtz"],
+        #     dimension_slice_start={"grid_W_3D_inner": slice(0, -1)},
+        #     dimension_slice_end={"grid_W_3D_inner": slice(1, None)},
+        #     dimension_to_add_nan="grid_W_3D_inner",
+        #     map_rename={"grid_W_3D_inner": "deptht"},
+        # )
+
+        ds_T["u"] = u
+        ds_T["v"] = v
+        ds_T["w"] = w
+        ds_T["deptht"].attrs["standard_name"] = "depth"
+        ds_T["u"].attrs["standard_name"] = "x_sea_water_velocity"
+        ds_T["v"].attrs["standard_name"] = "y_sea_water_velocity"
+
+        return ds_T

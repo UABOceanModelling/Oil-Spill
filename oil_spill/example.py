@@ -14,15 +14,9 @@ o = OpenOil(loglevel=0)  # Set loglevel to 0 for debug information
 
 data_opendrift_path = "/mnt/storage6/caio/manual_pkgs/opendrift/tests/test_data/14Jan2016_NorKyst_z_3d/NorKyst-800m_ZDEPTHS_his_00_3Dsubset.nc"
 
-
-ds = xr.open_dataset(data_opendrift_path)
-print(ds)
-
 # Norkyst
 reader_norkyst = reader_netCDF_CF_generic.Reader(data_opendrift_path)
 # reader_norkyst = reader_netCDF_CF_generic.Reader('https://thredds.met.no/thredds/dodsC/fou-hi/norkystv3_800m_m00_be')
-print(reader_norkyst)
-raise
 
 o.add_reader([reader_norkyst])
 o.set_config('environment:fallback:x_wind', 3)

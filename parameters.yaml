@@ -1,0 +1,17 @@
+# Those are the paths to the data files. Use glob patterns.
+## Please use a valid path for ALL data paths. Data paths should not be empty.
+data_paths:
+  U: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridU.nc
+  V: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridV.nc
+  T: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridT.nc
+  W: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridW.nc
+
+# These are parameters for xarray when opening datasets.
+xarray_parameters:
+  reader_parameters:
+    combine: "by_coords"
+    data_vars: "all"
+
+output_paths:
+  output_dir: /mnt/storage7/caio/fall_2025/output
+  output_file: oil_spill_simulation.nc
