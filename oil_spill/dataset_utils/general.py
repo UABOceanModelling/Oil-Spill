@@ -5,18 +5,16 @@ import numpy as np
 class DatasetHandler:
     def __init__(self, interpolation, renaming, attributes_to_add, slicing, keep):
         self.target_grid = interpolation.target_grid
-        self.dimensions = interpolation.dimensions
         self.variables = interpolation.variables
         self.renaming = renaming
         self.region_of_interest = slicing.region_of_interest
-        self.vars_to_keep = keep.vars
+        self.vars_to_keep = keep.variables
         self.coords_to_keep = keep.coords
         self.file_attributes = attributes_to_add.file
         self.variable_attributes = attributes_to_add.variables
         self.region_of_interest = slicing.region_of_interest
 
     def select_subset_of_data(self, ds: xr.Dataset) -> xr.Dataset:
-        # {"Y": slice(530, 750), "X": slice(120, 430)}
         variables_mapping = {key: slice(start, end) for key, (start, end) in self.region_of_interest.items()}
         ds = ds.isel(
             **variables_mapping,
@@ -52,32 +50,16 @@ class DatasetHandler:
         return ds
 
     def clean_dataset(self, ds: xr.Dataset) -> xr.Dataset:
-        keep_vars = [
-            "u",
-            "v",
-            "w",
-            "votemper",
-            "vosaline",
-            "sossheig",
-            "land_binary_mask"
-        ]
-
-        keep_coords = [
-            "X", "Y", "deptht", "time_counter", "nav_lon_grid_T", "nav_lat_grid_T"
-        ]
-
-        vars_to_drop = [v for v in ds.data_vars if v not in keep_vars]
+        vars_to_drop = [v for v in ds.data_vars if v not in self.vars_to_keep]
         ds = ds.drop_vars(vars_to_drop)
 
-        coords_to_drop = [c for c in ds.coords if c not in keep_coords]
+        coords_to_drop = [c for c in ds.coords if c not in self.coords_to_keep]
         ds = ds.drop_vars(coords_to_drop)
 
         return ds
 
-    def interpolate(self, data_array: xr.DataArray, dimension_slice_start: dict, dimension_slice_end: dict, dimension_to_add_nan: str) -> xr.DataArray:
+    def interpolate(self, data_array: xr.DataArray, dimension_slice_start: dict, dimension_slice_end: dict) -> xr.DataArray:
         d_array = 0.5 * (data_array.isel(**dimension_slice_start) + data_array.isel(**dimension_slice_end))
-
-        d_array = self.add_nan_column(d_array, dimension_to_add_nan)
 
         return d_array
 
@@ -86,8 +68,6 @@ class DatasetHandler:
                             dataset['vovecrtz'].isel({"grid_W_3D_inner": slice(1, None)}).data)
 
         W_on_T_data = np.concatenate([W_on_T_data, np.full((W_on_T_data.shape[0], 1, W_on_T_data.shape[2], W_on_T_data.shape[3]), np.nan)], axis=1)
-        # z_old = dataset['grid_W_3D_inner'].values
-        # z_new = 0.5 * (z_old[:-1] + z_old[1:])
         W_on_T = xr.DataArray(
             W_on_T_data,
             dims=('time_counter', "deptht", 'y', 'x'),
@@ -106,9 +86,15 @@ class DatasetHandler:
         return W_on_T
 
 
-    def add_nan_column(self, arr: xr.DataArray, dimension: str) -> xr.DataArray:
-        nan_col = xr.full_like(arr.isel(**{dimension: 0}), np.nan)
-        arr = xr.concat([arr, nan_col], dim=dimension)
+    def __add_nan_column(self, arr: xr.DataArray, dimension: str) -> xr.DataArray:
+        print(dimension)
+        raise
+        last_col = arr.isel(**{dimension: -1})
+        
+        print(arr)
+        arr = xr.concat([arr, last_col], dim=dimension)
+        print(arr)
+        raise
 
         return arr
 
@@ -125,20 +111,31 @@ class DatasetHandler:
         
     def create_combined_dataset(self, datasets: List[xr.Dataset]) -> xr.Dataset:
         for var, ds in datasets.items():
-                                           # NOTE: FIX FOR W VARIABLE
-            if not var == self.target_grid and not var == "W":
+            print(self.variables[var].source_var)
+            raise
+            variable_dimension, target_dimension = self.dimensions[var].items()
+            print(variable_dimension)
+            print(target_dimension)
+            raise
+            if not var == self.target_grid:
                 interpolated_data_array = self.interpolate(
                     data_array=ds[self.variables[var]],
                     dimension_slice_start={self.dimensions[var]: slice(0, -1)},
                     dimension_slice_end={self.dimensions[var]: slice(1, None)},
-                    dimension_to_add_nan=self.dimensions[var],
                 )
+                if var == "W":
+                    print(interpolated_data_array)
+                    raise
+
+                # print(datasets[self.target_grid][self.variables[self.target_grid]].size)
+                interpolated_data_array = self.__add_nan_column(interpolated_data_array, self.dimensions[var])
 
                 datasets[var][self.variables[var]] = interpolated_data_array
             
+        raise
         for var, rename_map in self.renaming.items():
             # NOTE: FIX FOR W VARIABLE
-            if not var == "W":
+            # if not var == "W":
                 if var in datasets:
                     datasets[var] = datasets[var].rename(rename_map)
 

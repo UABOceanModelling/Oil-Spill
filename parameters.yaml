@@ -11,10 +11,14 @@ experiment:
 # =============================================
 input_data:
   data_paths:
-    U: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridU.nc
-    V: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridV.nc
-    T: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridT.nc
-    W: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridW.nc
+    U: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d05_gridU.nc
+    V: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d05_gridV.nc
+    T: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d05_gridT.nc
+    W: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d05_gridW.nc
+    # U: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridU.nc
+    # V: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridV.nc
+    # T: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridT.nc
+    # W: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridW.nc
 
   ancillary_paths:
     mask: /mnt/storage4/tahya/runoff/runoff_comp_regions.nc
@@ -26,14 +30,19 @@ input_data:
 transformations:
   interpolation:
     target_grid: T           # Target grid for interpolation (U, V, T, or W)
-    dimensions:              # Dimensions to use for interpolation
-      U: x_grid_U
-      V: x_grid_V
-      W: grid_W_3D_inner
-    variables:               # Variables to keep after interpolation
-      U: "vozocrtx"
-      V: "vomecrty"
-      W: "vovecrtz"
+    variables:
+      U:
+        source_var: "vozocrtx"
+        dims_mapping:
+          x_grid_U: x_grid_T
+      V:
+        source_var: "vomecrty"
+        dims_mapping:
+          x_grid_V: x_grid_T
+      W:
+        source_var: "vovecrtz"
+        dims_mapping:
+          grid_W_3D_inner: deptht
   # Variable, coordinate and dimensions renaming
   renaming:
     T:
@@ -74,7 +83,7 @@ transformations:
 
   # Variables and coordinates to keep
   keep:
-    vars: ["u", "v", "w", "temp", "salt", "ssh", "land_binary_mask", "deptht"]
+    variables: ["u", "v", "w", "votemper", "vosaline", "sossheig", "land_binary_mask", "deptht"]
     coords: ["X", "Y", "deptht", "time_counter", "nav_lon_grid_T", "nav_lat_grid_T"]
 
 # =============================================
@@ -93,22 +102,23 @@ xarray:
 opendrift:
   dataset:
     name: "NEMO dataset"       # Dataset name used by OpenDrift
-  log_level: 20              # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
+  log_level: 0              # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
   seeding:
     lon: -100                   # Initial longitude of particles
     lat: 81                     # Initial latitude of particles
     number: 1000                # Number of particles
     radius: 10000               # Initial release radius in meters
-    z: 0                        # Initial depth (0 = surface)
-    time: "2006-01-03T00:00"    # Simulation start time
+    # z: 0                        # Initial depth (0 = surface)
+    # time: "2006-01-03T00:00"    # Simulation start time. Default: start time of the input data.
     oil_type: "GENERIC DIESEL"  # Type of oil
 
 # =============================================
 # Output configuration
 # =============================================
 output:
-  directory: /mnt/storage7/caio/fall_2025/output  # Directory to save output files
+  directory: /mnt/storage7/caio/fall_2025/output/  # Directory to save output files
   files:
-    netcdf: "{experiment}_{date}.nc"            # NetCDF result file
-    animation: "{experiment}_{date}.mp4"       # Spill animation
-    log: "{experiment}_{date}.log"             # Log file
+    netcdf: "oil_spill_simulation_-100_81.nc"            # NetCDF result file
+    plot: "oil_spill_simulation_-100_81.png"             # Static plot
+    animation: "oil_spill_simulation_-100_81.mp4"       # Spill animation
+    log: "oil_spill_simulation_-100_81.log"             # Log file

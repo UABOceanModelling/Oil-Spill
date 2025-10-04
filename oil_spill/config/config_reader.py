@@ -14,10 +14,14 @@ class InputData:
     ancillary_paths: AncillaryPaths
 
 @dataclass
+class VariableConfig:
+    source_var: str
+    dims_mapping: dict
+
+@dataclass
 class Interpolation:
     target_grid: str
-    dimensions: dict
-    variables: dict
+    variables: dict[str, VariableConfig]
 
 @dataclass
 class AttributesToAdd:
@@ -30,7 +34,7 @@ class Slicing:
 
 @dataclass
 class Keep:
-    vars: list
+    variables: list
     coords: list
 
 @dataclass
@@ -59,27 +63,28 @@ class Dataset:
     name: str
 
 
-@dataclass
-class Seeding:
-    lon: float
-    lat: float
-    number: int
-    radius: float
-    z: float
-    time: str
-    oil_type: str
+# @dataclass
+# class Seeding:
+#     lon: float
+#     lat: float
+#     number: int
+#     radius: float
+#     z: float
+#     time: str
+#     oil_type: str
 
 
 @dataclass
 class OpenDrift:
     dataset: Dataset
-    seeding: Seeding
+    seeding: dict
     log_level: str
 
 
 @dataclass
 class Files:
     netcdf: str
+    plot: str
     animation: str
     log: str
 
@@ -112,6 +117,10 @@ class ConfigReader:
         with open(path, "r") as f:
             data = yaml.safe_load(f)
 
+        variables = {
+            k: VariableConfig(**v) for k, v in data["transformations"]["interpolation"]["variables"].items()
+        }
+
         return cls(
             experiment=Experiment(**data["experiment"]),
             input_data=InputData(
@@ -119,7 +128,7 @@ class ConfigReader:
                 ancillary_paths=AncillaryPaths(**data["input_data"]["ancillary_paths"]),
             ),
             transformations=Transformations(
-                interpolation=Interpolation(**data["transformations"]["interpolation"]),
+                interpolation=Interpolation(data["transformations"]["interpolation"]["target_grid"], variables),
                 renaming=data["transformations"]["renaming"],
                 attributes_to_add=AttributesToAdd(**data["transformations"]["attributes_to_add"]),
                 slicing=Slicing(**data["transformations"]["slicing"]),
@@ -132,7 +141,7 @@ class ConfigReader:
             opendrift=OpenDrift(
                 dataset=Dataset(**data["opendrift"]["dataset"]),
                 log_level=data["opendrift"]["log_level"],
-                seeding=Seeding(**data["opendrift"]["seeding"]),
+                seeding=data["opendrift"]["seeding"],
             ),
             output=Output(
                 directory=data["output"]["directory"],
