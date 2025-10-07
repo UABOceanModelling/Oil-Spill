@@ -2,6 +2,7 @@ from typing import List
 import xarray as xr
 import numpy as np
 
+
 class DatasetHandler:
     def __init__(self, interpolation, renaming, attributes_to_add, slicing, keep):
         self.target_grid = interpolation.target_grid
@@ -14,7 +15,7 @@ class DatasetHandler:
         self.variable_attributes = attributes_to_add.variables
         self.region_of_interest = slicing.region_of_interest
 
-    def select_subset_of_data(self, ds: xr.Dataset) -> xr.Dataset:
+    def __select_subset_of_data(self, ds: xr.Dataset) -> xr.Dataset:
         variables_mapping = {key: slice(start, end) for key, (start, end) in self.region_of_interest.items()}
         ds = ds.isel(
             **variables_mapping,
@@ -22,9 +23,7 @@ class DatasetHandler:
 
         return ds
 
-    def add_mask(self, ds: xr.Dataset) -> xr.Dataset:
-        tahya_mask = "/mnt/storage4/tahya/runoff/runoff_comp_regions.nc"
-        mask_ds = xr.open_dataset(tahya_mask)
+    def __add_mask(self, ds: xr.Dataset, mask_ds: xr.Dataset) -> xr.Dataset:
         mask = mask_ds["tmask"].fillna(0).astype(int)
 
         time_len = ds["time_counter"].size
@@ -41,7 +40,7 @@ class DatasetHandler:
                 "Y": ds["Y"],
                 "X": ds["X"],
             },
-            attrs={"standard_name": "land_binary_mask"}
+            attrs={"standard_name": "land_binary_mask"},
         )
 
         ds["land_binary_mask"] = mask_broadcasted
@@ -49,7 +48,7 @@ class DatasetHandler:
 
         return ds
 
-    def clean_dataset(self, ds: xr.Dataset) -> xr.Dataset:
+    def __clean_dataset(self, ds: xr.Dataset) -> xr.Dataset:
         vars_to_drop = [v for v in ds.data_vars if v not in self.vars_to_keep]
         ds = ds.drop_vars(vars_to_drop)
 
@@ -63,38 +62,18 @@ class DatasetHandler:
 
         return d_array
 
-    def interpolate_w(self, dataset: xr.Dataset, deptht) -> xr.DataArray:
-        W_on_T_data = 0.5 * (dataset['vovecrtz'].isel({"grid_W_3D_inner": slice(0, -1)}).data +
-                            dataset['vovecrtz'].isel({"grid_W_3D_inner": slice(1, None)}).data)
+    def __fill_values(self, arr: xr.DataArray, dimension: str, target_dim_size: int) -> xr.DataArray:
+        times_to_add = target_dim_size - arr[dimension].size
 
-        W_on_T_data = np.concatenate([W_on_T_data, np.full((W_on_T_data.shape[0], 1, W_on_T_data.shape[2], W_on_T_data.shape[3]), np.nan)], axis=1)
-        W_on_T = xr.DataArray(
-            W_on_T_data,
-            dims=('time_counter', "deptht", 'y', 'x'),
-            coords={
-                'time_counter': dataset['time_counter'],
-                'deptht': deptht,
-                'y': dataset['y'],
-                'x': dataset['x']
-            },
-            attrs=dataset['vovecrtz'].attrs,
-            name="w",
-        )
+        if times_to_add <= 0:
+            return arr
 
-        W_on_T = W_on_T.rename({'y': "Y", 'x': "X"})
+        last_col = arr.isel({dimension: -1})
+        repeats = [last_col] * times_to_add
+        arr = xr.concat([arr, *repeats], dim=dimension)
 
-        return W_on_T
-
-
-    def __add_nan_column(self, arr: xr.DataArray, dimension: str) -> xr.DataArray:
-        print(dimension)
-        raise
-        last_col = arr.isel(**{dimension: -1})
-        
-        print(arr)
-        arr = xr.concat([arr, last_col], dim=dimension)
-        print(arr)
-        raise
+        if dimension in arr.coords:
+            arr = arr.drop_vars(dimension)
 
         return arr
 
@@ -108,45 +87,52 @@ class DatasetHandler:
                     ds[var].attrs[attr] = value
 
         return ds
-        
-    def create_combined_dataset(self, datasets: List[xr.Dataset]) -> xr.Dataset:
-        for var, ds in datasets.items():
-            print(self.variables[var].source_var)
-            raise
-            variable_dimension, target_dimension = self.dimensions[var].items()
-            print(variable_dimension)
-            print(target_dimension)
-            raise
-            if not var == self.target_grid:
-                interpolated_data_array = self.interpolate(
-                    data_array=ds[self.variables[var]],
-                    dimension_slice_start={self.dimensions[var]: slice(0, -1)},
-                    dimension_slice_end={self.dimensions[var]: slice(1, None)},
-                )
-                if var == "W":
-                    print(interpolated_data_array)
-                    raise
 
-                # print(datasets[self.target_grid][self.variables[self.target_grid]].size)
-                interpolated_data_array = self.__add_nan_column(interpolated_data_array, self.dimensions[var])
-
-                datasets[var][self.variables[var]] = interpolated_data_array
-            
-        raise
+    def __rename_variables(self, datasets: List[xr.Dataset]) -> xr.Dataset:
         for var, rename_map in self.renaming.items():
-            # NOTE: FIX FOR W VARIABLE
-            # if not var == "W":
-                if var in datasets:
-                    datasets[var] = datasets[var].rename(rename_map)
+            if var in datasets:
+                datasets[var] = datasets[var].rename(rename_map)
 
-        # NOTE: FIX FOR W VARIABLE
-        datasets["W"]["vovecrtz"] = self.interpolate_w(datasets["W"], datasets["T"]["deptht"])
-
-        target_dataset = datasets[self.target_grid]
+    def __join_datasets(self, datasets: List[xr.Dataset]) -> xr.Dataset:
+        target_ds = datasets[self.target_grid]
         for var, dataset in datasets.items():
             if not var == self.target_grid:
-                target_dataset[var.lower()] = dataset[self.variables[var]]
+                target_ds[var.lower()] = dataset[self.variables[var].source_var]
+        return target_ds
 
-        ds = self.__add_atributes(target_dataset)
+    def __run_interpolation(self, datasets: List[xr.Dataset]):
+        target_ds = datasets[self.target_grid]
+        for var, ds in datasets.items():
+            if not var == self.target_grid:
+                variable_dim, target_dim = next(iter(self.variables[var].dims_mapping.items()))
+                dimension_slice_start = {variable_dim: slice(0, -1)}
+                dimension_slice_end = {variable_dim: slice(1, None)}
+
+                interpolated_data_array = self.interpolate(
+                    data_array=ds[self.variables[var].source_var],
+                    dimension_slice_start=dimension_slice_start,
+                    dimension_slice_end=dimension_slice_end,
+                )
+
+                target_dim_size = target_ds[target_dim].size
+                interpolated_data_array = self.__fill_values(interpolated_data_array, variable_dim, target_dim_size)
+
+                datasets[var][self.variables[var].source_var] = interpolated_data_array
+
+    def create_combined_dataset(self, datasets: List[xr.Dataset], mask_ds: xr.Dataset) -> xr.Dataset:
+
+        self.__run_interpolation(datasets)
+
+        self.__rename_variables(datasets)
+
+        ds = self.__join_datasets(datasets)
+
+        ds = self.__add_atributes(ds)
+
+        ds = self.__add_mask(ds, mask_ds)
+
+        ds = self.__clean_dataset(ds)
+
+        ds = self.__select_subset_of_data(ds)
 
         return ds

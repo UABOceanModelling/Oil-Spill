@@ -11,14 +11,10 @@ experiment:
 # =============================================
 input_data:
   data_paths:
-    U: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d05_gridU.nc
-    V: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d05_gridV.nc
-    T: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d05_gridT.nc
-    W: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d05_gridW.nc
-    # U: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridU.nc
-    # V: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridV.nc
-    # T: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridT.nc
-    # W: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridW.nc
+    U: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridU.nc
+    V: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridV.nc
+    T: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridT.nc
+    W: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridW.nc
 
   ancillary_paths:
     mask: /mnt/storage4/tahya/runoff/runoff_comp_regions.nc
@@ -59,6 +55,7 @@ transformations:
     W:
       y: Y
       x: X
+      grid_W_3D_inner: deptht
   attributes_to_add:
     file: 
       title: "NEMO ANHA4-EPM520 + OpenDrift"
@@ -104,8 +101,10 @@ opendrift:
     name: "NEMO dataset"       # Dataset name used by OpenDrift
   log_level: 0              # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
   seeding:
-    lon: -100                   # Initial longitude of particles
-    lat: 81                     # Initial latitude of particles
+    # lon: -100                   # Initial longitude of particles
+    # lat: 81                     # Initial latitude of particles
+    lon: -162                   # Initial longitude of particles
+    lat: 82                     # Initial latitude of particles
     number: 1000                # Number of particles
     radius: 10000               # Initial release radius in meters
     # z: 0                        # Initial depth (0 = surface)
@@ -116,7 +115,7 @@ opendrift:
 # Output configuration
 # =============================================
 output:
-  directory: /mnt/storage7/caio/fall_2025/output/  # Directory to save output files
+  directory: /mnt/storage7/caio/Oil-Spill/oil_spill/output/  # Directory to save output files
   files:
     netcdf: "oil_spill_simulation_-100_81.nc"            # NetCDF result file
     plot: "oil_spill_simulation_-100_81.png"             # Static plot

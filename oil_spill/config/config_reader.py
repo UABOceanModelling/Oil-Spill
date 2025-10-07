@@ -7,7 +7,6 @@ import yaml
 class AncillaryPaths:
     mask: str
 
-
 @dataclass
 class InputData:
     data_paths: dict

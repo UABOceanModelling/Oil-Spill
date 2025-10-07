@@ -18,7 +18,9 @@ from oil_spill.config import ConfigReader
 
 
 def read_data(config: ConfigReader):
-    dr = DatasetReader(data_paths=config.input_data.data_paths, xarray_parameters=config.xarray_parameters)
+    dr = DatasetReader(
+        xarray_parameters=config.xarray_parameters,
+    )
     dh = DatasetHandler(
         interpolation=config.transformations.interpolation,
         renaming=config.transformations.renaming,
@@ -26,27 +28,18 @@ def read_data(config: ConfigReader):
         slicing=config.transformations.slicing,
         keep=config.transformations.keep,
     )
-    datasets = dr.read_multi_files()
-    return datasets, dh
+    datasets = dr.read_multi_files(config.input_data.data_paths)
+    mask_ds = dr.read_single_file(config.input_data.ancillary_paths.mask)
+    return dh, datasets, mask_ds
 
-def transform_data(datasets: List[xr.Dataset], dh: DatasetHandler) -> xr.Dataset:
-    combined_ds = dh.create_combined_dataset(datasets)
-    raise
-
-    combined_ds = dh.add_mask(combined_ds)
-
-    combined_ds = dh.clean_dataset(combined_ds)
-
-    combined_ds = dh.select_subset_of_data(combined_ds)
-
-    return combined_ds
 
 def run_simulation(T_reader: Reader, config: ConfigReader):
     o = OpenOil(loglevel=config.opendrift.log_level)
+
     o.add_reader([T_reader])
 
     set_configuration(o)
-
+    
     seeding_config = {
         "time": T_reader.start_time,
     }
@@ -59,20 +52,32 @@ def run_simulation(T_reader: Reader, config: ConfigReader):
     directory = config.output.directory
     plot = config.output.files.plot
     animation = config.output.files.animation
-    o.plot(filename=directory+plot, linecolor="z")
+    o.plot(filename=directory + "plots/" + plot, linecolor="z")
 
-    o.animation(filename=directory+animation, fast=True)
+    # o.animation(filename=directory + "animations/" + animation, fast=True)
+
+    
+
 
 def run():
     config = ConfigReader.from_yaml("parameters.yaml")
 
-    datasets, dh = read_data(config)
+    import matplotlib.pyplot as plt
+    dh, datasets, mask_ds = read_data(config)
 
-    combined_ds = transform_data(datasets, dh)
+    combined_ds = dh.create_combined_dataset(datasets, mask_ds)
+    # combined_ds["land_binary_mask"].isel(time_counter=0, deptht=0).plot()
+    # import matplotlib.pyplot as plt
+    # plt.show()
+    # raise
 
     T_reader = Reader(combined_ds, name="NEMO dataset")
 
     run_simulation(T_reader, config)
+
+    # netcdf = config.output.files.netcdf
+    # directory = config.output.directory
+    # combined_ds.to_netcdf(directory + netcdf)
 
 
 if __name__ == "__main__":
