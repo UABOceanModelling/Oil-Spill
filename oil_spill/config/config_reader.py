@@ -7,34 +7,42 @@ import yaml
 class AncillaryPaths:
     mask: str
 
+
 @dataclass
 class InputData:
     data_paths: dict
     ancillary_paths: AncillaryPaths
+
 
 @dataclass
 class VariableConfig:
     source_var: str
     dims_mapping: dict
 
+
 @dataclass
 class Interpolation:
     target_grid: str
+    target_reference_variable: str
     variables: dict[str, VariableConfig]
+
 
 @dataclass
 class AttributesToAdd:
     file: dict
     variables: dict
 
+
 @dataclass
 class Slicing:
     region_of_interest: dict
+
 
 @dataclass
 class Keep:
     variables: list
     coords: list
+
 
 @dataclass
 class Transformations:
@@ -60,17 +68,6 @@ class XarrayParameters:
 @dataclass
 class Dataset:
     name: str
-
-
-# @dataclass
-# class Seeding:
-#     lon: float
-#     lat: float
-#     number: int
-#     radius: float
-#     z: float
-#     time: str
-#     oil_type: str
 
 
 @dataclass
@@ -116,9 +113,7 @@ class ConfigReader:
         with open(path, "r") as f:
             data = yaml.safe_load(f)
 
-        variables = {
-            k: VariableConfig(**v) for k, v in data["transformations"]["interpolation"]["variables"].items()
-        }
+        variables = {k: VariableConfig(**v) for k, v in data["transformations"]["interpolation"]["variables"].items()}
 
         return cls(
             experiment=Experiment(**data["experiment"]),
@@ -127,7 +122,11 @@ class ConfigReader:
                 ancillary_paths=AncillaryPaths(**data["input_data"]["ancillary_paths"]),
             ),
             transformations=Transformations(
-                interpolation=Interpolation(data["transformations"]["interpolation"]["target_grid"], variables),
+                interpolation=Interpolation(
+                    data["transformations"]["interpolation"]["target_grid"],
+                    data["transformations"]["interpolation"]["target_reference_variable"],
+                    variables,
+                ),
                 renaming=data["transformations"]["renaming"],
                 attributes_to_add=AttributesToAdd(**data["transformations"]["attributes_to_add"]),
                 slicing=Slicing(**data["transformations"]["slicing"]),

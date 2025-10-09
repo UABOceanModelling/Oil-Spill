@@ -25,7 +25,8 @@ input_data:
 # =============================================
 transformations:
   interpolation:
-    target_grid: T           # Target grid for interpolation (U, V, T, or W)
+    target_grid: T                        # Target grid for interpolation (U, V, T, or W)
+    target_reference_variable: "votemper" # Reference variable for target grid dimensions
     variables:
       U:
         source_var: "vozocrtx"
@@ -44,18 +45,8 @@ transformations:
     T:
       x_grid_T: X
       y_grid_T: Y
-    U: 
-      x_grid_U: X
-      y_grid_U: Y
-      depthu: deptht
-    V:
-      x_grid_V: X
-      y_grid_V: Y
-      depthv: deptht
-    W:
-      y: Y
-      x: X
-      grid_W_3D_inner: deptht
+      nav_lat_grid_T: lat
+      nav_lon_grid_T: lon
   attributes_to_add:
     file: 
       title: "NEMO ANHA4-EPM520 + OpenDrift"
@@ -81,7 +72,7 @@ transformations:
   # Variables and coordinates to keep
   keep:
     variables: ["u", "v", "w", "votemper", "vosaline", "sossheig", "land_binary_mask", "deptht"]
-    coords: ["X", "Y", "deptht", "time_counter", "nav_lon_grid_T", "nav_lat_grid_T"]
+    coords: ["X", "Y", "deptht", "time_counter", "time_centered", "lon", "lat"]
 
 # =============================================
 # Xarray
@@ -103,10 +94,10 @@ opendrift:
   seeding:
     # lon: -100                   # Initial longitude of particles
     # lat: 81                     # Initial latitude of particles
-    lon: -162                   # Initial longitude of particles
-    lat: 82                     # Initial latitude of particles
-    number: 1000                # Number of particles
-    radius: 10000               # Initial release radius in meters
+    lat: 84           # Initial latitude of particles
+    lon: -54                       # Initial longitude of particles
+    number: 10                # Number of particles
+    radius: 10               # Initial release radius in meters
     # z: 0                        # Initial depth (0 = surface)
     # time: "2006-01-03T00:00"    # Simulation start time. Default: start time of the input data.
     oil_type: "GENERIC DIESEL"  # Type of oil
@@ -117,7 +108,7 @@ opendrift:
 output:
   directory: /mnt/storage7/caio/Oil-Spill/oil_spill/output/  # Directory to save output files
   files:
-    netcdf: "oil_spill_simulation_-100_81.nc"            # NetCDF result file
-    plot: "oil_spill_simulation_-100_81.png"             # Static plot
-    animation: "oil_spill_simulation_-100_81.mp4"       # Spill animation
-    log: "oil_spill_simulation_-100_81.log"             # Log file
+    netcdf: "oil_spill.nc"            # NetCDF result file
+    plot: "oil_spill.png"             # Static plot
+    animation: "oil_spill.mp4"       # Spill animation
+    log: "oil_spill.log"             # Log file

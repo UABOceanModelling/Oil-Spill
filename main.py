@@ -9,12 +9,15 @@ from opendrift.readers.reader_netCDF_CF_generic import Reader
 # 3rd party
 import xarray as xr
 from typing import List
+import numpy as np
+from matplotlib import pyplot as plt
 
 # local
 from oil_spill.dataset_utils import DatasetHandler
 from oil_spill.reader import DatasetReader
 from oil_spill.utils import set_configuration
 from oil_spill.config import ConfigReader
+from oil_spill.plotter import Plotter
 
 
 def read_data(config: ConfigReader):
@@ -39,7 +42,7 @@ def run_simulation(T_reader: Reader, config: ConfigReader):
     o.add_reader([T_reader])
 
     set_configuration(o)
-    
+
     seeding_config = {
         "time": T_reader.start_time,
     }
@@ -49,36 +52,108 @@ def run_simulation(T_reader: Reader, config: ConfigReader):
 
     o.run()
 
-    directory = config.output.directory
-    plot = config.output.files.plot
-    animation = config.output.files.animation
-    o.plot(filename=directory + "plots/" + plot, linecolor="z")
-
-    # o.animation(filename=directory + "animations/" + animation, fast=True)
-
-    
+    Plotter.plot_result(config, o)
 
 
 def run():
     config = ConfigReader.from_yaml("parameters.yaml")
 
-    import matplotlib.pyplot as plt
     dh, datasets, mask_ds = read_data(config)
 
     combined_ds = dh.create_combined_dataset(datasets, mask_ds)
-    # combined_ds["land_binary_mask"].isel(time_counter=0, deptht=0).plot()
-    # import matplotlib.pyplot as plt
-    # plt.show()
-    # raise
 
     T_reader = Reader(combined_ds, name="NEMO dataset")
 
     run_simulation(T_reader, config)
 
-    # netcdf = config.output.files.netcdf
-    # directory = config.output.directory
-    # combined_ds.to_netcdf(directory + netcdf)
 
+def check_U_data(ds: xr.Dataset):
+    # ds = ds.isel(
+    #     y_grid_U=slice(530, 750),
+    #     x_grid_U=slice(120, 430),
+    # )
+
+    ds71 = ds.isel(
+        # x_grid_U=71,
+        x_grid_U=191,
+        # y_grid_U=87,
+        y_grid_U=617,
+        time_counter=0
+    )
+    print(ds71["vozocrtx"].values)
+    print("length", len(ds71["vozocrtx"].values))
+
+    ds72 = ds.isel(
+        x_grid_U=192,
+        y_grid_U=617,
+        time_counter=0
+    )
+    print(ds72["vozocrtx"].values)
+    print("length", len(ds72["vozocrtx"].values))
+
+def check_data(ds: xr.Dataset):
+    da = ds["nav_lat_grid_T"]
+    subset = ds.where((ds.nav_lat_grid_T == 78) & (ds.nav_lon_grid_T == 127))
+    non_nan_count = np.sum(~np.isnan(subset["votemper"].values))
+    print(non_nan_count)
+    raise
+    print(da.isel(nav_lat_grid_T=0, nav_lon_grid_T=0))
+
+    raise
+
+
+def select_subset_data(ds: xr.Dataset):
+    lon = -33
+    lat = 84
+    dist = np.sqrt(
+        (ds["nav_lat_grid_T"] - lat) ** 2 +
+        (ds["nav_lon_grid_T"] - lon) ** 2
+    )
+
+    iy, ix = np.unravel_index(dist.argmin(), dist.shape)
+
+    dados_ponto = ds.isel(Y=iy, X=ix)
+
+    print(dados_ponto["nav_lat_grid_T"].values)
+    print(dados_ponto["nav_lon_grid_T"].values)
+    # print(dados_ponto['u'])
+    # print(dados_ponto['v'])
+    # print(dados_ponto['w'])
+    # print(dados_ponto['votemper'])
+    # print(dados_ponto['vosaline'])
+    raise
+    ds = ds.isel(
+        X=71,
+        Y=87,
+        # deptht=20,
+        time_counter=0
+    )
+
+    # print("temp component:")
+    # print(ds["votemper"].values)
+
+    # print("sal component:")
+    # print(ds["vosaline"].values)
+
+    print("U component:")
+    print(ds["u"].values)
+
+    # print("V component:")
+    # print(ds["v"].values)
+
+    # print("W component:")
+    # print(ds["w"].values)
+    # raise
+    # ds.to_netcdf("subset.nc")
+
+def replace_values(ds: xr.Dataset):
+    ds['u'] = ds['u'].where(ds['u'] != 0, 0.5)
+    ds['v'] = ds['v'].where(ds['v'] != 0, -0.5)
+    ds['w'] = ds['w'].where(ds['w'] != 0, 0.5)
+    ds['votemper'] = ds['votemper'].where(ds['votemper'] != 0, 0.5)
+    ds['vosaline'] = ds['vosaline'].where(ds['vosaline'] != 0, 0.5)
+
+    return ds
 
 if __name__ == "__main__":
     run()

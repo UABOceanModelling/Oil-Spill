@@ -1,4 +1,6 @@
 from typing import List
+from time import time
+
 import xarray as xr
 import numpy as np
 
@@ -6,6 +8,7 @@ import numpy as np
 class DatasetHandler:
     def __init__(self, interpolation, renaming, attributes_to_add, slicing, keep):
         self.target_grid = interpolation.target_grid
+        self.target_reference_variable = interpolation.target_reference_variable
         self.variables = interpolation.variables
         self.renaming = renaming
         self.region_of_interest = slicing.region_of_interest
@@ -57,10 +60,10 @@ class DatasetHandler:
 
         return ds
 
-    def interpolate(self, data_array: xr.DataArray, dimension_slice_start: dict, dimension_slice_end: dict) -> xr.DataArray:
-        d_array = 0.5 * (data_array.isel(**dimension_slice_start) + data_array.isel(**dimension_slice_end))
+    def interpolate(self, da: xr.DataArray, dimension_slice_start: dict, dimension_slice_end: dict) -> xr.DataArray:
+        interpolated_array = 0.5 * (da.isel(**dimension_slice_start) + da.isel(**dimension_slice_end))
 
-        return d_array
+        return interpolated_array
 
     def __fill_values(self, arr: xr.DataArray, dimension: str, target_dim_size: int) -> xr.DataArray:
         times_to_add = target_dim_size - arr[dimension].size
@@ -71,9 +74,6 @@ class DatasetHandler:
         last_col = arr.isel({dimension: -1})
         repeats = [last_col] * times_to_add
         arr = xr.concat([arr, *repeats], dim=dimension)
-
-        if dimension in arr.coords:
-            arr = arr.drop_vars(dimension)
 
         return arr
 
@@ -93,13 +93,6 @@ class DatasetHandler:
             if var in datasets:
                 datasets[var] = datasets[var].rename(rename_map)
 
-    def __join_datasets(self, datasets: List[xr.Dataset]) -> xr.Dataset:
-        target_ds = datasets[self.target_grid]
-        for var, dataset in datasets.items():
-            if not var == self.target_grid:
-                target_ds[var.lower()] = dataset[self.variables[var].source_var]
-        return target_ds
-
     def __run_interpolation(self, datasets: List[xr.Dataset]):
         target_ds = datasets[self.target_grid]
         for var, ds in datasets.items():
@@ -109,30 +102,58 @@ class DatasetHandler:
                 dimension_slice_end = {variable_dim: slice(1, None)}
 
                 interpolated_data_array = self.interpolate(
-                    data_array=ds[self.variables[var].source_var],
+                    da=ds[self.variables[var].source_var],
                     dimension_slice_start=dimension_slice_start,
                     dimension_slice_end=dimension_slice_end,
                 )
 
-                target_dim_size = target_ds[target_dim].size
-                interpolated_data_array = self.__fill_values(interpolated_data_array, variable_dim, target_dim_size)
+                interpolated_data_array = self.__fill_values(
+                    interpolated_data_array, variable_dim, target_ds[target_dim].size
+                )
 
-                datasets[var][self.variables[var].source_var] = interpolated_data_array
+                target_ds[var.lower()] = xr.DataArray(
+                    interpolated_data_array,
+                    dims=target_ds[self.target_reference_variable].dims,
+                    coords=target_ds[self.target_reference_variable].coords,
+                )
 
     def create_combined_dataset(self, datasets: List[xr.Dataset], mask_ds: xr.Dataset) -> xr.Dataset:
-
+        start = time()
+        print("Starting interpolation...")
         self.__run_interpolation(datasets)
+        end = time()
+        print(f"Interpolation took {end - start} seconds")
 
+        start = time()
+        print("Starting renaming...")
         self.__rename_variables(datasets)
+        end = time()
+        print(f"Renaming took {end - start} seconds")
 
-        ds = self.__join_datasets(datasets)
+        ds = datasets[self.target_grid]
 
+        start = time()
+        print("Starting adding attributes...")
         ds = self.__add_atributes(ds)
+        end = time()
+        print(f"Adding attributes took {end - start} seconds")
 
-        ds = self.__add_mask(ds, mask_ds)
+        start = time()
+        print("Starting adding mask...")
+        # ds = self.__add_mask(ds, mask_ds)
+        end = time()
+        print(f"Mask addition took {end - start} seconds")
 
+        start = time()
+        print("Starting cleaning dataset...")
         ds = self.__clean_dataset(ds)
+        end = time()
+        print(f"Dataset cleaning took {end - start} seconds")
 
+        start = time()
+        print("Starting subset selection...")
         ds = self.__select_subset_of_data(ds)
+        end = time()
+        print(f"Subset selection took {end - start} seconds")
 
         return ds
