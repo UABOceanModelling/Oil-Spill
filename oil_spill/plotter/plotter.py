@@ -40,7 +40,7 @@ class Plotter:
         lon = config.opendrift.seeding["lon"]
         o.plot(filename=directory + "plots/simulations/" + plot + f"_{lat}_{lon}.png", 
                linecolor="z", 
-               buffer=10
+            #    buffer=1
         )
 
         # o.animation(filename=directory + "animations/" + animation, fast=True)

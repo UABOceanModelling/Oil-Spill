@@ -92,12 +92,10 @@ opendrift:
     name: "NEMO dataset"       # Dataset name used by OpenDrift
   log_level: 0              # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
   seeding:
-    # lon: -100                   # Initial longitude of particles
-    # lat: 81                     # Initial latitude of particles
-    lat: 84           # Initial latitude of particles
-    lon: -54                       # Initial longitude of particles
-    number: 10                # Number of particles
-    radius: 10               # Initial release radius in meters
+    lat: 80           # Initial latitude of particles
+    lon: 100                       # Initial longitude of particles
+    number: 100                # Number of particles
+    radius: 100               # Initial release radius in meters
     # z: 0                        # Initial depth (0 = surface)
     # time: "2006-01-03T00:00"    # Simulation start time. Default: start time of the input data.
     oil_type: "GENERIC DIESEL"  # Type of oil
