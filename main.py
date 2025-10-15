@@ -1,6 +1,7 @@
 # stdlib
 from datetime import timedelta
 from pprint import pprint
+import os
 
 # opendrift
 from opendrift.models.openoil import OpenOil
@@ -19,6 +20,8 @@ from oil_spill.utils import set_configuration
 from oil_spill.config import ConfigReader
 from oil_spill.plotter import Plotter
 
+from oil_spill.utils import check_existing_file
+
 
 def read_data(config: ConfigReader):
     dr = DatasetReader(
@@ -28,6 +31,7 @@ def read_data(config: ConfigReader):
         interpolation=config.transformations.interpolation,
         renaming=config.transformations.renaming,
         attributes_to_add=config.transformations.attributes_to_add,
+        coords_to_add=config.transformations.coords_to_add,
         slicing=config.transformations.slicing,
         keep=config.transformations.keep,
     )
@@ -52,15 +56,24 @@ def run_simulation(T_reader: Reader, config: ConfigReader):
 
     o.run()
 
-    Plotter.plot_result(config, o)
+    plotter = Plotter(config, o)
+    plotter.plot_main()
+    plotter.plot_property("z")
+    plotter.plot_oil_budget()
+    plotter.exibit_animation()
 
 
 def run():
     config = ConfigReader.from_yaml("parameters.yaml")
 
-    dh, datasets, mask_ds = read_data(config)
 
-    combined_ds = dh.create_combined_dataset(datasets, mask_ds)
+    is_dataset_already_processed = check_existing_file(os.getcwd() + "/oil_spill/data/processed/combined_dataset.nc")
+    if is_dataset_already_processed:
+        print("Using already processed dataset...")
+        combined_ds = xr.open_dataset("oil_spill/data/processed/combined_dataset.nc")
+    else:
+        dh, datasets, mask_ds = read_data(config)
+        combined_ds = dh.create_combined_dataset(datasets, mask_ds)
 
     T_reader = Reader(combined_ds, name="NEMO dataset")
 

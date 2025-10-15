@@ -49,6 +49,7 @@ class Transformations:
     interpolation: Interpolation
     renaming: dict
     attributes_to_add: AttributesToAdd
+    coords_to_add: dict
     slicing: Slicing
     keep: Keep
 
@@ -129,6 +130,7 @@ class ConfigReader:
                 ),
                 renaming=data["transformations"]["renaming"],
                 attributes_to_add=AttributesToAdd(**data["transformations"]["attributes_to_add"]),
+                coords_to_add=data["transformations"]["coords_to_add"],
                 slicing=Slicing(**data["transformations"]["slicing"]),
                 keep=Keep(**data["transformations"]["keep"]),
             ),

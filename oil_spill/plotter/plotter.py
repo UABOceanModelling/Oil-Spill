@@ -1,15 +1,64 @@
 import xarray as xr
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-import numpy as np
 
 from opendrift.models.openoil import OpenOil
 
+from oil_spill.utils import create_directory
+
 
 class Plotter:
-    def __init__(self):
-        pass
+    def __init__(self, config, o: OpenOil):
+        self.directory = config.output.directory
+        self.plot_name = config.output.files.plot
+        self.number_of_particles = config.opendrift.seeding["number"]
+        self.radius = config.opendrift.seeding["radius"]
+        self.oil_type = config.opendrift.seeding["oil_type"]
+        self.o = o
+        self.animation = config.output.files.animation
+        self.lat = config.opendrift.seeding["lat"]
+        self.lon = config.opendrift.seeding["lon"]
+
+        self.output_directory = create_directory(
+            self.directory
+            + "plots/simulations/"
+            + f"lat_{self.lat}"
+            + "_"
+            + f"lon_{self.lon}"
+            + "/"
+            + self.oil_type
+            + "/"
+            + f"particles_{self.number_of_particles}_"
+            + f"radius_{self.radius}_m"
+        )
+
+    def plot_main(self):
+        create_directory(self.output_directory + "/plots/")
+        self.o.plot(
+            filename=self.output_directory + "/plots/" + self.plot_name,
+            linecolor="z",
+            #    buffer=1
+        )
+
+    def exibit_animation(self):
+        create_directory(self.output_directory + "/animations/")
+        self.o.animation(
+            filename=self.output_directory + "/animations/" + self.animation, 
+            color='z',
+            fast=True
+        )
+
+    def plot_property(self, property_name: str):
+        create_directory(self.output_directory + "/plots/properties/")
+        self.o.plot_property(
+            property_name,
+            filename=self.output_directory + "/plots/properties/" + property_name + ".png",
+        )
+    
+    def plot_oil_budget(self):
+        create_directory(self.output_directory + "/plots/budget/")
+        self.o.plot_oil_budget(
+            filename=self.output_directory + "/plots/budget/oil_budget.png",
+        )
 
     @staticmethod
     def plot_mask(mask_ds: xr.Dataset, directory: str, filename: str):
@@ -30,20 +79,6 @@ class Plotter:
         import matplotlib.pyplot as plt
 
         plt.savefig(directory + "plots/mask/" + filename)
-
-    @staticmethod
-    def plot_result(config, o: OpenOil):
-        directory = config.output.directory
-        plot = config.output.files.plot
-        animation = config.output.files.animation
-        lat = config.opendrift.seeding["lat"]
-        lon = config.opendrift.seeding["lon"]
-        o.plot(filename=directory + "plots/simulations/" + plot + f"_{lat}_{lon}.png", 
-               linecolor="z", 
-            #    buffer=1
-        )
-
-        # o.animation(filename=directory + "animations/" + animation, fast=True)
 
     @staticmethod
     def plot_variable(config, ds: xr.Dataset, variable: str):

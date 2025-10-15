@@ -1,1 +1,2 @@
+from oil_spill.utils.create_directory import create_directory, check_existing_file
 from oil_spill.utils.set_configuration import set_configuration

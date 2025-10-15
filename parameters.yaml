@@ -43,10 +43,13 @@ transformations:
   # Variable, coordinate and dimensions renaming
   renaming:
     T:
+      deptht: depth
       x_grid_T: X
       y_grid_T: Y
       nav_lat_grid_T: lat
       nav_lon_grid_T: lon
+      votemper: "temperature"
+      vosaline: "salinity"
   attributes_to_add:
     file: 
       title: "NEMO ANHA4-EPM520 + OpenDrift"
@@ -59,9 +62,25 @@ transformations:
       v:
         standard_name: "y_sea_water_velocity"
       w:
-        standard_name: "z_sea_water_velocity"
-      deptht:
+        standard_name: "upward_sea_water_velocity"
+        long_name: "Sea water z velocity"
+        units: "meter second-1"
+        time: "time_counter"
+      depth:
         standard_name: "depth"
+        long_name: "depth"
+        axis: "Z"
+      salinity:
+        standard_name: "sea_water_salinity"
+
+  coords_to_add:
+    u: ["X", "Y"]
+    v: ["X", "Y"]
+    w: ["X", "Y"]
+    temperature: ["X", "Y"]
+    salinity: ["X", "Y"]
+
+
 
   # Slicing data for region of interest
   slicing:
@@ -71,8 +90,8 @@ transformations:
 
   # Variables and coordinates to keep
   keep:
-    variables: ["u", "v", "w", "votemper", "vosaline", "sossheig", "land_binary_mask", "deptht"]
-    coords: ["X", "Y", "deptht", "time_counter", "time_centered", "lon", "lat"]
+    variables: ["u", "v", "w", "temperature", "salinity", "sossheig", "land_binary_mask", "depth"]
+    coords: ["X", "Y", "depth", "time_counter", "time_centered", "lon", "lat"]
 
 # =============================================
 # Xarray
@@ -96,7 +115,7 @@ opendrift:
     lon: 100                       # Initial longitude of particles
     number: 100                # Number of particles
     radius: 100               # Initial release radius in meters
-    # z: 0                        # Initial depth (0 = surface)
+    z: 1                        # Initial depth (0 = surface)
     # time: "2006-01-03T00:00"    # Simulation start time. Default: start time of the input data.
     oil_type: "GENERIC DIESEL"  # Type of oil
 
@@ -104,7 +123,7 @@ opendrift:
 # Output configuration
 # =============================================
 output:
-  directory: /mnt/storage7/caio/Oil-Spill/oil_spill/output/  # Directory to save output files
+  directory: oil_spill/output/  # Directory to save output files
   files:
     netcdf: "oil_spill.nc"            # NetCDF result file
     plot: "oil_spill.png"             # Static plot

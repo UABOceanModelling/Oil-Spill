@@ -1,1 +1,1 @@
-from oil_spill.dataset_utils.general import DatasetHandler
+from oil_spill.dataset_utils.dataset_handler import DatasetHandler

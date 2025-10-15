@@ -4,9 +4,11 @@ from time import time
 import xarray as xr
 import numpy as np
 
+from oil_spill.utils import create_directory
+
 
 class DatasetHandler:
-    def __init__(self, interpolation, renaming, attributes_to_add, slicing, keep):
+    def __init__(self, interpolation, renaming, attributes_to_add, coords_to_add, slicing, keep):
         self.target_grid = interpolation.target_grid
         self.target_reference_variable = interpolation.target_reference_variable
         self.variables = interpolation.variables
@@ -14,8 +16,9 @@ class DatasetHandler:
         self.region_of_interest = slicing.region_of_interest
         self.vars_to_keep = keep.variables
         self.coords_to_keep = keep.coords
-        self.file_attributes = attributes_to_add.file
-        self.variable_attributes = attributes_to_add.variables
+        self.file_attributes_to_add = attributes_to_add.file
+        self.variable_attributes_to_add = attributes_to_add.variables
+        self.coords_to_add = coords_to_add
         self.region_of_interest = slicing.region_of_interest
 
     def __select_subset_of_data(self, ds: xr.Dataset) -> xr.Dataset:
@@ -78,14 +81,21 @@ class DatasetHandler:
         return arr
 
     def __add_atributes(self, ds: xr.Dataset) -> xr.Dataset:
-        for attr, value in self.file_attributes.items():
+        for attr, value in self.file_attributes_to_add.items():
             ds.attrs[attr] = value
 
-        for var, attrs in self.variable_attributes.items():
+        for var, attrs in self.variable_attributes_to_add.items():
             if var in ds:
                 for attr, value in attrs.items():
                     ds[var].attrs[attr] = value
 
+        return ds
+
+    def __add_coords(self, ds: xr.Dataset) -> xr.Dataset:
+        for var, coords in self.coords_to_add.items():
+            if var in ds:
+                for coord in coords:
+                    ds[var] = ds[var].assign_coords({coord: ds[coord].data})
         return ds
 
     def __rename_variables(self, datasets: List[xr.Dataset]) -> xr.Dataset:
@@ -116,6 +126,7 @@ class DatasetHandler:
                     dims=target_ds[self.target_reference_variable].dims,
                     coords=target_ds[self.target_reference_variable].coords,
                 )
+    
 
     def create_combined_dataset(self, datasets: List[xr.Dataset], mask_ds: xr.Dataset) -> xr.Dataset:
         start = time()
@@ -139,10 +150,16 @@ class DatasetHandler:
         print(f"Adding attributes took {end - start} seconds")
 
         start = time()
-        print("Starting adding mask...")
-        # ds = self.__add_mask(ds, mask_ds)
+        print("Starting adding coords...")
+        ds = self.__add_coords(ds)
         end = time()
-        print(f"Mask addition took {end - start} seconds")
+        print(f"Adding coords took {end - start} seconds")
+
+        # start = time()
+        # print("Starting adding mask...")
+        # ds = self.__add_mask(ds, mask_ds)
+        # end = time()
+        # print(f"Mask addition took {end - start} seconds")
 
         start = time()
         print("Starting cleaning dataset...")
@@ -155,5 +172,11 @@ class DatasetHandler:
         ds = self.__select_subset_of_data(ds)
         end = time()
         print(f"Subset selection took {end - start} seconds")
+
+        print("Saving combined dataset...")
+
+        directory = create_directory("oil_spill/data/processed")
+        ds.to_netcdf(directory + "/combined_dataset.nc")
+        print("Combined dataset saved!")
 
         return ds
