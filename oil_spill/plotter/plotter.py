@@ -27,7 +27,7 @@ class Plotter:
             + "/"
             + self.oil_type
             + "/"
-            + f"particles_{self.number_of_particles}_"
+            + f"particles_{self.number_of_particles}-"
             + f"radius_{self.radius}_m"
         )
 
@@ -39,7 +39,7 @@ class Plotter:
             #    buffer=1
         )
 
-    def exibit_animation(self):
+    def create_animation(self):
         create_directory(self.output_directory + "/animations/")
         self.o.animation(
             filename=self.output_directory + "/animations/" + self.animation, 

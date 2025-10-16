@@ -1,0 +1,1 @@
+from oil_spill.main import main

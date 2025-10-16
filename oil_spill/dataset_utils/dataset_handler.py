@@ -8,11 +8,12 @@ from oil_spill.utils import create_directory
 
 
 class DatasetHandler:
-    def __init__(self, interpolation, renaming, attributes_to_add, coords_to_add, slicing, keep):
+    def __init__(self, interpolation, combination, renaming, attributes_to_add, coords_to_add, slicing, keep):
         self.target_grid = interpolation.target_grid
         self.target_reference_variable = interpolation.target_reference_variable
-        self.variables = interpolation.variables
-        self.renaming = renaming
+        self.interpolation_variables = interpolation.variables
+        self.combination = combination
+        self.renaming_map = renaming
         self.region_of_interest = slicing.region_of_interest
         self.vars_to_keep = keep.variables
         self.coords_to_keep = keep.coords
@@ -80,7 +81,7 @@ class DatasetHandler:
 
         return arr
 
-    def __add_atributes(self, ds: xr.Dataset) -> xr.Dataset:
+    def __add_attributes(self, ds: xr.Dataset) -> xr.Dataset:
         for attr, value in self.file_attributes_to_add.items():
             ds.attrs[attr] = value
 
@@ -98,21 +99,33 @@ class DatasetHandler:
                     ds[var] = ds[var].assign_coords({coord: ds[coord].data})
         return ds
 
-    def __rename_variables(self, datasets: List[xr.Dataset]) -> xr.Dataset:
-        for var, rename_map in self.renaming.items():
-            if var in datasets:
-                datasets[var] = datasets[var].rename(rename_map)
+    def __rename_variables(self, ds: xr.Dataset) -> xr.Dataset:
+        variables_to_remove = []
+        for var in self.renaming_map.keys():
+            if (var not in ds) and (var not in ds.coords) and (var not in ds.dims):
+                print(f"WARNING: Variable '{var}' not found in dataset for renaming. Removing from renaming map...")
+                variables_to_remove.append(var)
+
+        for var in variables_to_remove:
+            self.renaming_map.pop(var)
+
+        return ds.rename(self.renaming_map)
+    
+    def __pop_datasets(self, datasets: List[xr.Dataset], datasets_to_pop: List[str]):
+        for var in datasets_to_pop:
+            datasets.pop(var)
 
     def __run_interpolation(self, datasets: List[xr.Dataset]):
         target_ds = datasets[self.target_grid]
+        datasets_to_pop = []
         for var, ds in datasets.items():
-            if not var == self.target_grid:
-                variable_dim, target_dim = next(iter(self.variables[var].dims_mapping.items()))
+            if not var == self.target_grid and var in self.interpolation_variables:
+                variable_dim, target_dim = next(iter(self.interpolation_variables[var].dims_mapping.items()))
                 dimension_slice_start = {variable_dim: slice(0, -1)}
                 dimension_slice_end = {variable_dim: slice(1, None)}
 
                 interpolated_data_array = self.interpolate(
-                    da=ds[self.variables[var].source_var],
+                    da=ds[self.interpolation_variables[var].source_var],
                     dimension_slice_start=dimension_slice_start,
                     dimension_slice_end=dimension_slice_end,
                 )
@@ -126,26 +139,64 @@ class DatasetHandler:
                     dims=target_ds[self.target_reference_variable].dims,
                     coords=target_ds[self.target_reference_variable].coords,
                 )
-    
 
-    def create_combined_dataset(self, datasets: List[xr.Dataset], mask_ds: xr.Dataset) -> xr.Dataset:
+                datasets_to_pop.append(var)
+
+        return datasets_to_pop
+
+    def __unify_datasets(self, datasets: List[xr.Dataset]) -> xr.Dataset:
+        combined_ds = datasets[self.target_grid]
+
+        if self.combination is None:
+            return combined_ds
+
+        for dataset in self.combination.keys():
+            if dataset == self.target_grid:
+                print("WARNING: Target grid cannot be in combination section.")
+                continue
+            if dataset not in datasets:
+                print(f"WARNING: Dataset '{dataset}' not found for combination. Skipping...")
+                continue
+
+            data_variables = self.combination[dataset]["variables"]
+
+            for var in data_variables:
+                if var not in datasets[dataset]:
+                    raise ValueError(f"Variable '{var}' not found in dataset '{dataset}' for combination.")
+                
+                da = datasets[dataset][var]
+
+                if data_variables[var] is not None:
+                    da = da.rename(data_variables[var]["dims_mapping"])
+
+                combined_ds[var.lower()] = da
+
+        return combined_ds
+
+    def create_combined_dataset(self, datasets: List[xr.Dataset]) -> xr.Dataset:
         start = time()
         print("Starting interpolation...")
-        self.__run_interpolation(datasets)
+        datasets_to_pop = self.__run_interpolation(datasets)
         end = time()
         print(f"Interpolation took {end - start} seconds")
 
+        self.__pop_datasets(datasets, datasets_to_pop)
+
+        start = time()
+        print("Starting dataset unification...")
+        ds = self.__unify_datasets(datasets)
+        end = time()
+        print(f"Dataset unification took {end - start} seconds")
+
         start = time()
         print("Starting renaming...")
-        self.__rename_variables(datasets)
+        ds = self.__rename_variables(ds)
         end = time()
         print(f"Renaming took {end - start} seconds")
 
-        ds = datasets[self.target_grid]
-
         start = time()
         print("Starting adding attributes...")
-        ds = self.__add_atributes(ds)
+        ds = self.__add_attributes(ds)
         end = time()
         print(f"Adding attributes took {end - start} seconds")
 
@@ -154,12 +205,6 @@ class DatasetHandler:
         ds = self.__add_coords(ds)
         end = time()
         print(f"Adding coords took {end - start} seconds")
-
-        # start = time()
-        # print("Starting adding mask...")
-        # ds = self.__add_mask(ds, mask_ds)
-        # end = time()
-        # print(f"Mask addition took {end - start} seconds")
 
         start = time()
         print("Starting cleaning dataset...")

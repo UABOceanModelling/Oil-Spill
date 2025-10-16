@@ -4,14 +4,8 @@ import yaml
 
 
 @dataclass
-class AncillaryPaths:
-    mask: str
-
-
-@dataclass
 class InputData:
     data_paths: dict
-    ancillary_paths: AncillaryPaths
 
 
 @dataclass
@@ -47,6 +41,7 @@ class Keep:
 @dataclass
 class Transformations:
     interpolation: Interpolation
+    combination: dict
     renaming: dict
     attributes_to_add: AttributesToAdd
     coords_to_add: dict
@@ -120,7 +115,6 @@ class ConfigReader:
             experiment=Experiment(**data["experiment"]),
             input_data=InputData(
                 data_paths=data["input_data"]["data_paths"],
-                ancillary_paths=AncillaryPaths(**data["input_data"]["ancillary_paths"]),
             ),
             transformations=Transformations(
                 interpolation=Interpolation(
@@ -128,6 +122,7 @@ class ConfigReader:
                     data["transformations"]["interpolation"]["target_reference_variable"],
                     variables,
                 ),
+                combination=data["transformations"]["combination"],
                 renaming=data["transformations"]["renaming"],
                 attributes_to_add=AttributesToAdd(**data["transformations"]["attributes_to_add"]),
                 coords_to_add=data["transformations"]["coords_to_add"],

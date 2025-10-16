@@ -15,9 +15,8 @@ input_data:
     V: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridV.nc
     T: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridT.nc
     W: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_gridW.nc
-
-  ancillary_paths:
-    mask: /mnt/storage4/tahya/runoff/runoff_comp_regions.nc
+    icemod: /mnt/storage7/myers/NEMO/ANHA4-EPM520/ANHA4-EPM520_y2006m01d**_icemod.nc
+    # mask: /mnt/storage4/tahya/runoff/runoff_comp_regions.nc
 
 
 # =============================================
@@ -40,22 +39,40 @@ transformations:
         source_var: "vovecrtz"
         dims_mapping:
           grid_W_3D_inner: deptht
+  combination:
+    icemod:
+      variables:
+        iicevelu: 
+        iicevelv:
+        ileadfra:
+          dims_mapping:
+            y_grid_T_2D_inner: y_grid_T
+            x_grid_T_2D_inner: x_grid_T
+        ivolume:
+          dims_mapping:
+            y_grid_T_2D_inner: y_grid_T
+            x_grid_T_2D_inner: x_grid_T
+
   # Variable, coordinate and dimensions renaming
   renaming:
-    T:
-      deptht: depth
-      x_grid_T: X
-      y_grid_T: Y
-      nav_lat_grid_T: lat
-      nav_lon_grid_T: lon
-      votemper: "temperature"
-      vosaline: "salinity"
+    deptht: depth
+    x_grid_T: X
+    y_grid_T: Y
+    nav_lat_grid_T: lat
+    nav_lon_grid_T: lon
+    votemper: temperature
+    vosaline: salinity
+    iicevelu: ice_u
+    iicevelv: ice_v
+    ivolume: ice_thickness
+    ileadfra: ice_concentration
+
   attributes_to_add:
     file: 
-      title: "NEMO ANHA4-EPM520 + OpenDrift"
-      institution: "University of Alberta"
-      source: "NEMO ocean model"
-      comment: "This dataset has been processed for oil spill simulation using OpenDrift."
+      title: NEMO ANHA4-EPM520 + OpenDrift
+      institution: University of Alberta
+      source: NEMO ocean model
+      comment: This dataset has been processed for oil spill simulation using OpenDrift.
     variables:
       u:
         standard_name: "x_sea_water_velocity"
@@ -72,6 +89,14 @@ transformations:
         axis: "Z"
       salinity:
         standard_name: "sea_water_salinity"
+      ice_u:
+        standard_name: "x_sea_ice_velocity"
+      ice_v:
+        standard_name: "y_sea_ice_velocity"
+      ice_thickness:
+        standard_name: "sea_ice_thickness"
+      ice_concentration:
+        standard_name: "sea_ice_area_fraction"
 
   coords_to_add:
     u: ["X", "Y"]
@@ -79,6 +104,8 @@ transformations:
     w: ["X", "Y"]
     temperature: ["X", "Y"]
     salinity: ["X", "Y"]
+    ice_u: ["X", "Y"]
+    ice_v: ["X", "Y"]
 
 
 
@@ -90,7 +117,7 @@ transformations:
 
   # Variables and coordinates to keep
   keep:
-    variables: ["u", "v", "w", "temperature", "salinity", "sossheig", "land_binary_mask", "depth"]
+    variables: ["u", "v", "w", "temperature", "salinity", "sossheig", "land_binary_mask", "depth", "ice_u", "ice_v", "ice_thickness", "ice_concentration"]
     coords: ["X", "Y", "depth", "time_counter", "time_centered", "lon", "lat"]
 
 # =============================================
@@ -115,7 +142,7 @@ opendrift:
     lon: 100                       # Initial longitude of particles
     number: 100                # Number of particles
     radius: 100               # Initial release radius in meters
-    z: 1                        # Initial depth (0 = surface)
+    z: 0                        # Initial depth (0 = surface)
     # time: "2006-01-03T00:00"    # Simulation start time. Default: start time of the input data.
     oil_type: "GENERIC DIESEL"  # Type of oil
 
