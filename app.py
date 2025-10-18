@@ -1,6 +1,6 @@
 from oil_spill import main
 
-PARAMETERS_FOLDER = "simulations/"
+CONFIG_FOLDER = "experiments/"
 
 if __name__ == "__main__":
-    main(PARAMETERS_FOLDER)
+    main(CONFIG_FOLDER)

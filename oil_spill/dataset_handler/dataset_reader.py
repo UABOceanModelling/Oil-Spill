@@ -8,8 +8,11 @@ import xarray as xr
 
 
 class DatasetReader:
-    def __init__(self, xarray_parameters: dict):
-        self.xarray_parameters = xarray_parameters
+    def __read_single_file(self, path) -> xr.Dataset:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"File not found at path: {path}")
+        ds = xr.open_dataset(path, engine="netcdf4")
+        return ds
 
     def read_multi_files(self, data_paths):
         datasets = {}
@@ -25,8 +28,8 @@ class DatasetReader:
 
         return datasets
 
-    def read_single_file(self, path) -> xr.Dataset:
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"File not found at path: {path}")
-        ds = xr.open_dataset(path)
-        return ds
+    def read_datasets(self, data_paths_dict: dict) -> dict:
+        datasets = {}
+        for dataset_name, path in data_paths_dict.items():
+            datasets[dataset_name] = self.__read_single_file(path)
+        return datasets

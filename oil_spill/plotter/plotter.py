@@ -9,12 +9,12 @@ from oil_spill.utils import create_directory
 class Plotter:
     def __init__(self, config, o: OpenOil):
         self.directory = config.output.directory
-        self.plot_name = config.output.files.plot
+        self.plot_name = config.output.files['plot']
         self.number_of_particles = config.opendrift.seeding["number"]
         self.radius = config.opendrift.seeding["radius"]
         self.oil_type = config.opendrift.seeding["oil_type"]
         self.o = o
-        self.animation = config.output.files.animation
+        self.animation = config.output.files['animation']
         self.lat = config.opendrift.seeding["lat"]
         self.lon = config.opendrift.seeding["lon"]
 

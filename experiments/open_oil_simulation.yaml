@@ -1,0 +1,74 @@
+# =============================================
+# Experiment metadata
+# =============================================
+experiment:
+  name: "oil_spill_simulation"
+  description: "Oil spill simulation for January 2006, ANHA4"
+  date: "2006-01"
+
+# =============================================
+# Input/Output configuration
+# =============================================
+input:
+  nemo: data/combined_ds.nc
+  # x_wind: data/x_wind.nc
+  # y_wind: data/y_wind.nc
+output:
+  directory: output/  # Directory to save output files
+  files:
+    netcdf: "oil_spill.nc"            # NetCDF result file
+    plot: "oil_spill.png"             # Static plot
+    animation: "oil_spill.mp4"       # Spill animation
+    log: "oil_spill.log"             # Log file
+
+# =============================================
+# OpenDrift configuration
+# =============================================
+# Only provide parameters you want to override; all others use OpenDrift defaults.
+opendrift:
+  dataset:
+    name: "NEMO dataset"       # Dataset name used by OpenDrift
+  log_level: 0              # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
+  seeding:
+    lat: 80           # Initial latitude of particles
+    lon: 100                       # Initial longitude of particles
+    number: 100                # Number of particles
+    radius: 100               # Initial release radius in meters
+    z: 0                        # Initial depth (0 = surface)
+    # time: "2006-01-03T00:00"    # Simulation start time. Default: start time of the input data.
+    oil_type: "GENERIC DIESEL"  # Type of oil
+
+# =============================================
+# Data transformation
+# =============================================
+transformation:
+  renaming_mappings:
+    x_wind:
+      u_wind: x_wind
+      time: time
+      lon: lon
+      lat: lat
+    y_wind:
+      v_wind: y_wind
+      time: time
+      lon: lon
+      lat: lat
+  attributes_to_add:
+    x_wind:
+      x_wind:
+        standard_name: "x_wind"
+      time:
+        standard_name: "time"
+      lon:
+        standard_name: "lon"
+      lat:
+        standard_name: "lat"
+    y_wind:
+      y_wind:
+        standard_name: "y_wind"
+      time:
+        standard_name: "time"
+      lon:
+        standard_name: "lon"
+      lat:
+        standard_name: "lat"
