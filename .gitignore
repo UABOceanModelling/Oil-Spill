@@ -1,1 +1,7 @@
 __pycache__/
+data/*
+output/*
+*.png
+*.mp4
+*.nc
+*.txt
