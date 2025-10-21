@@ -14,22 +14,17 @@ class DatasetReader:
         ds = xr.open_dataset(path, engine="netcdf4")
         return ds
 
-    def read_multi_files(self, data_paths):
+    def __read_multi_files(self, data_paths):
         datasets = {}
-        reader_params = self.xarray_parameters.reader
-        combine = reader_params.combine
-        data_vars = reader_params.data_vars
 
         for var, pattern in data_paths.items():
             paths = glob.glob(pattern)
             if not paths:
                 raise FileNotFoundError(f"No files found for variable '{var}' with pattern '{pattern}'")
-            datasets[var] = xr.open_mfdataset(paths, combine=combine, data_vars=data_vars)
+            datasets[var] = xr.open_mfdataset(paths, combine="by_coords", data_vars="all", decode_cf=False)
 
         return datasets
 
     def read_datasets(self, data_paths_dict: dict) -> dict:
-        datasets = {}
-        for dataset_name, path in data_paths_dict.items():
-            datasets[dataset_name] = self.__read_single_file(path)
+        datasets = self.__read_multi_files(data_paths_dict)
         return datasets

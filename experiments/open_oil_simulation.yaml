@@ -10,9 +10,9 @@ experiment:
 # Input/Output configuration
 # =============================================
 input:
-  nemo: data/combined_ds.nc
-  # x_wind: data/x_wind.nc
-  # y_wind: data/y_wind.nc
+  nemo: /home/caion/projects/rrg-pmyers-ad/caio/DatasetHarmonizer/output/x_116_430-y_520_750/2006/combined_ds-y****m**d**.nc
+  x_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/u10_gdps_y2006.nc
+  y_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/v10_gdps_y2006.nc
 output:
   directory: output/  # Directory to save output files
   files:
@@ -30,9 +30,9 @@ opendrift:
     name: "NEMO dataset"       # Dataset name used by OpenDrift
   log_level: 0              # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
   seeding:
-    lat: 80           # Initial latitude of particles
-    lon: 100                       # Initial longitude of particles
-    number: 100                # Number of particles
+    lat: 77           # Initial latitude of particles
+    lon: -136                       # Initial longitude of particles
+    number: 1000                # Number of particles
     radius: 100               # Initial release radius in meters
     z: 0                        # Initial depth (0 = surface)
     # time: "2006-01-03T00:00"    # Simulation start time. Default: start time of the input data.
@@ -45,30 +45,32 @@ transformation:
   renaming_mappings:
     x_wind:
       u_wind: x_wind
-      time: time
-      lon: lon
-      lat: lat
+      TIME: time
+      LON: lon
+      LAT: lat
     y_wind:
       v_wind: y_wind
-      time: time
-      lon: lon
-      lat: lat
+      TIME: time
+      LON: lon
+      LAT: lat
   attributes_to_add:
     x_wind:
       x_wind:
-        standard_name: "x_wind"
+        standard_name: x_wind
       time:
-        standard_name: "time"
+        standard_name: time
+        units: hours since 2006-01-01 00:00:00
       lon:
-        standard_name: "lon"
+        standard_name: lon
       lat:
-        standard_name: "lat"
+        standard_name: lat
     y_wind:
       y_wind:
-        standard_name: "y_wind"
+        standard_name: y_wind
       time:
-        standard_name: "time"
+        standard_name: time
+        units: hours since 2006-01-01 00:00:00
       lon:
-        standard_name: "lon"
+        standard_name: lon
       lat:
-        standard_name: "lat"
+        standard_name: lat

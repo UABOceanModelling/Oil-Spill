@@ -3,29 +3,31 @@ class DatasetFormatter:
         self.renaming_mappings = config.transformation.renaming_mappings
         self.attributes_to_add = config.transformation.attributes_to_add
 
-    def __rename_variables(self, ds):
+    def __rename_variables(self, datasets):
         variables_to_remove = []
-        for var in self.renaming_mappings.keys():
-            if (var not in ds) and (var not in ds.coords) and (var not in ds.dims):
-                print(f"WARNING: Variable '{var}' not found in dataset for renaming. Skipping...")
-                variables_to_remove.append(var)
+        for ds_name, renaming_map in self.renaming_mappings.items():
+            if ds_name not in datasets:
+                print(f"WARNING: Dataset '{ds_name}' not found for renaming. Skipping...")
+                continue
 
-        for var in variables_to_remove:
-            self.renaming_mappings.pop(var)
+            ds = datasets[ds_name]
+            for var, new_name in renaming_map.items():
+                if (var not in ds) and (var not in ds.coords) and (var not in ds.dims):
+                    print(f"WARNING: Variable '{var}' not found in dataset for renaming. Skipping...")
+                    variables_to_remove.append(var)
 
-        return ds.rename(self.renaming_mappings)
+            for var in variables_to_remove:
+                renaming_map.pop(var)
 
-    def __add_attributes(self, ds):
-        for var, attrs in self.attributes_to_add.items():
-            if var in ds.variables:
-                for attr_name, attr_value in attrs.items():
-                    ds[var].attrs[attr_name] = attr_value
-        return ds
+            datasets[ds_name] = ds.rename(renaming_map)
+
+    def __add_attributes(self, datasets):
+        for ds_name, variables_and_attrs in self.attributes_to_add.items():
+            for var, attrs in variables_and_attrs.items():
+                if var in datasets[ds_name]:
+                    for attr_name, attr in attrs.items():
+                        datasets[ds_name][var].attrs[attr_name] = attr
 
     def transform_data(self, datasets):
-        for name, ds in datasets.items():
-            ds = self.__rename_variables(ds)
-
-            ds = self.__add_attributes(ds)
-
-            datasets[name] = ds
+        self.__rename_variables(datasets)
+        self.__add_attributes(datasets)

@@ -14,20 +14,6 @@ from oil_spill.plotter import Plotter
 from oil_spill.utils import set_configuration
 
 
-def read_data(config: ConfigReader):
-    dr = DatasetReader()
-    datasets = dr.read_datasets(config.input)
-
-    return datasets
-
-
-def transform_data(config: ConfigReader, datasets: dict) -> dict:
-    df = DatasetFormatter(config)
-    df.transform_data(datasets)
-
-    return datasets
-
-
 def run_simulation(readers: List[Reader], config: ConfigReader, o: OpenOil):
     o.add_reader(readers)
 
@@ -43,12 +29,13 @@ def run_simulation(readers: List[Reader], config: ConfigReader, o: OpenOil):
     o.run()
 
 
-def plot_results(config, o):
+def plot_results(config, o: OpenOil):
     plotter = Plotter(config, o)
     plotter.plot_main()
     plotter.plot_property("z")
     plotter.plot_oil_budget()
-    plotter.create_animation()
+    # plotter.create_animation()
+    # o.animate_vertical_distribution()
 
 
 def main(config_folder: str):
@@ -59,10 +46,15 @@ def main(config_folder: str):
 
         config = ConfigReader.from_yaml(os.path.join(config_folder, file))
 
-        datasets = read_data(config)
-        datasets = transform_data(config, datasets)
+        dr = DatasetReader()
+        datasets = dr.read_datasets(config.input)
+
+        df = DatasetFormatter(config)
+        df.transform_data(datasets)
 
         readers = [Reader(ds, name=name) for name, ds in datasets.items()]
+
+        [ds.close() for ds in datasets.values()]
 
         o = OpenOil(loglevel=config.opendrift.log_level)
         run_simulation(readers, config, o)
