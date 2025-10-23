@@ -34,7 +34,7 @@ def plot_results(config, o: OpenOil):
     plotter.plot_main()
     plotter.plot_property("z")
     plotter.plot_oil_budget()
-    # plotter.create_animation()
+    plotter.create_animation()
     # o.animate_vertical_distribution()
 
 
@@ -52,12 +52,14 @@ def main(config_folder: str):
         df = DatasetFormatter(config)
         df.transform_data(datasets)
 
-        readers = [Reader(ds, name=name) for name, ds in datasets.items()]
-
-        [ds.close() for ds in datasets.values()]
-
+        readers = []
+        for name, ds in datasets.items():
+            readers.append(Reader(ds, name=name))
+            ds.close()
+        
         o = OpenOil(loglevel=config.opendrift.log_level)
         run_simulation(readers, config, o)
         plot_results(config, o)
 
         print(f"Simulation for file {file} finished")
+        

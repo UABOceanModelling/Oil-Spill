@@ -8,12 +8,6 @@ import xarray as xr
 
 
 class DatasetReader:
-    def __read_single_file(self, path) -> xr.Dataset:
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"File not found at path: {path}")
-        ds = xr.open_dataset(path, engine="netcdf4")
-        return ds
-
     def __read_multi_files(self, data_paths):
         datasets = {}
 
@@ -21,7 +15,14 @@ class DatasetReader:
             paths = glob.glob(pattern)
             if not paths:
                 raise FileNotFoundError(f"No files found for variable '{var}' with pattern '{pattern}'")
-            datasets[var] = xr.open_mfdataset(paths, combine="by_coords", data_vars="all", decode_cf=False)
+            datasets[var] = xr.open_mfdataset(
+                paths,
+                combine="by_coords", 
+                data_vars="all", 
+                decode_cf=False, 
+                # chunks={"time_counter": 10}
+            )
+            datasets[var].attrs["source_files"] = [os.path.basename(p) for p in paths]
 
         return datasets
 
