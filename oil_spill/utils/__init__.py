@@ -1,2 +1,2 @@
-from oil_spill.utils.directory_handler import create_directory, check_existing_file
+from oil_spill.utils.directory_handler import create_directory, file_exists
 from oil_spill.utils.set_configuration import set_configuration

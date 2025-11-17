@@ -1,0 +1,120 @@
+# =============================================
+# Experiment metadata
+# =============================================
+experiment:
+  name: "oil_spill_simulation"
+  description: "Oil spill simulation for January 2002, ANHA4"
+  date: "2002-01"
+
+# =============================================
+# Input/Output configuration
+# =============================================
+input:
+  nemo: /home/caion/projects/rrg-pmyers-ad/caio/DatasetHarmonizer/output/x_0_593-y_330_799/combined_ds-y200*m**.nc
+  x_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/u10_gdps_y200*.nc
+  y_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/v10_gdps_y200*.nc
+output:
+  directory: output/  # Directory to save output files
+  # directory: test-output/  # Directory to save output files
+  files:
+    netcdf: "oil_spill.nc"            # NetCDF result file
+    plot: "oil_spill.png"             # Static plot
+    animation: "oil_spill.mp4"        # Spill animation
+    log: "oil_spill.log"              # Log file
+
+# =============================================
+# OpenDrift configuration
+# =============================================
+# Only provide parameters you want to override; all others use OpenDrift defaults.
+opendrift:
+  dataset:
+    name: "NEMO dataset"          # Dataset name used by OpenDrift
+  log_level: 0                   # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
+  # end_time: 2005-07-01 12:00:00
+  end_time: 2003-07-01 12:00:00
+  time_step: 60                   # in minutes
+  seeding:
+    lat: 75                       # Initial latitude of particles
+    lon: -125                     # Initial longitude of particles
+    number: 10000                   # Number of particles
+    radius: 500                   # Initial release radius in meters
+    z: -10                         # first X meters of water column
+    time: 2002-07-01 12:00:00     # start time
+    oil_type: "GENERIC DIESEL"    # Type of oil
+
+# =============================================
+# Xarray configuration
+# =============================================
+xarray:
+  datasets:
+    nemo: 
+      read_data_mode: together
+      open_dataset_params:
+        combine: nested
+        concat_dim: time_counter
+        data_vars: minimal
+        coords: minimal
+        decode_cf: False
+        chunks:
+          time_counter: 1
+    x_wind:
+      read_data_mode: together
+      open_dataset_params:
+        combine: nested
+        concat_dim: TIME
+        data_vars: minimal
+        coords: minimal
+        decode_cf: False
+        chunks:
+          TIME: 1
+    y_wind: 
+      read_data_mode: together
+      open_dataset_params:
+        combine: nested
+        concat_dim: TIME
+        data_vars: minimal
+        coords: minimal
+        decode_cf: False
+        chunks:
+          TIME: 1
+
+# =============================================
+# Data transformation
+# =============================================
+transformation:
+  renaming_mappings:
+    x_wind:
+      u_wind: x_wind
+      TIME: time
+      LON: lon
+      LAT: lat 
+    y_wind:
+      v_wind: y_wind
+      TIME: time
+      LON: lon
+      LAT: lat
+  attributes_to_add:
+    x_wind:
+      x_wind:
+        standard_name: x_wind
+        units: meter second-1
+      time:
+        standard_name: time
+      lon:
+        standard_name: lon
+      lat:
+        standard_name: lat
+    y_wind:
+      y_wind:
+        standard_name: y_wind
+        units: meter second-1
+      time:
+        standard_name: time
+      lon:
+        standard_name: lon
+      lat:
+        standard_name: lat
+  variables_to_drop:
+    nemo: ["ice_concentration", "ice_thickness", "ice_u", "ice_v"]
+  datasets_to_format_time: [x_wind, y_wind]
+    

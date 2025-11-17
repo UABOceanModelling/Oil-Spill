@@ -6,26 +6,25 @@ import os
 # 3rd party
 import xarray as xr
 
+from oil_spill.utils import file_exists
+
 
 class DatasetReader:
-    def __read_multi_files(self, data_paths):
-        datasets = {}
+    def __init__(self, config):
+        self.data_paths = config.input
+        self.datasets_config_dict = config.xarray.datasets
 
-        for var, pattern in data_paths.items():
-            paths = glob.glob(pattern)
+    def read_multi_files(self, data_paths_list: list, params: dict) -> xr.Dataset:
+        return xr.open_mfdataset(data_paths_list, **params)
+
+    def read_single_file(self, path, additional_params):
+        return xr.open_dataset(path, **additional_params)
+
+    def get_file_paths(self):
+        paths_dict = {}
+        for var, pattern in self.data_paths.items():
+            paths = sorted(glob.glob(pattern))
             if not paths:
                 raise FileNotFoundError(f"No files found for variable '{var}' with pattern '{pattern}'")
-            datasets[var] = xr.open_mfdataset(
-                paths,
-                combine="by_coords", 
-                data_vars="all", 
-                decode_cf=False, 
-                # chunks={"time_counter": 10}
-            )
-            datasets[var].attrs["source_files"] = [os.path.basename(p) for p in paths]
-
-        return datasets
-
-    def read_datasets(self, data_paths_dict: dict) -> dict:
-        datasets = self.__read_multi_files(data_paths_dict)
-        return datasets
+            paths_dict[var] = paths
+        return paths_dict

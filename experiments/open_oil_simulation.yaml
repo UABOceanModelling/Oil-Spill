@@ -3,23 +3,27 @@
 # =============================================
 experiment:
   name: "oil_spill_simulation"
-  description: "Oil spill simulation for January 2006, ANHA4"
-  date: "2006-01"
+  description: "Oil spill simulation for January 2002, ANHA4"
+  date: "2002-01"
 
 # =============================================
 # Input/Output configuration
 # =============================================
 input:
-  nemo: /home/caion/projects/rrg-pmyers-ad/caio/DatasetHarmonizer/output/x_116_430-y_520_750/2006/combined_ds-y****m**d**.nc
-  x_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/u10_gdps_y2006.nc
-  y_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/v10_gdps_y2006.nc
+  # nemo: /home/caion/projects/rrg-pmyers-ad/caio/DatasetHarmonizer/output/x_116_430-y_520_750/2002/combined_ds-y****m**d**.nc
+  # nemo: /home/caion/projects/rrg-pmyers-ad/caio/DatasetHarmonizer/output/x_116_430-y_520_750/2002/combined_ds-y2002m01d**.nc
+  nemo: /home/caion/projects/rrg-pmyers-ad/caio/DatasetHarmonizer/output/x_116_430-y_520_750/2002/combined_ds-y2002m01.nc
+  x_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/u10_gdps_y2002.nc
+  y_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/v10_gdps_y2002.nc
+  mask: /home/caion/projects/rrg-pmyers-ad/ANHA4-I/ANHA4_mesh_mask.nc 
 output:
   directory: output/  # Directory to save output files
+  # directory: test-output/  # Directory to save output files
   files:
     netcdf: "oil_spill.nc"            # NetCDF result file
     plot: "oil_spill.png"             # Static plot
-    animation: "oil_spill.mp4"       # Spill animation
-    log: "oil_spill.log"             # Log file
+    animation: "oil_spill.mp4"        # Spill animation
+    log: "oil_spill.log"              # Log file
 
 # =============================================
 # OpenDrift configuration
@@ -27,16 +31,16 @@ output:
 # Only provide parameters you want to override; all others use OpenDrift defaults.
 opendrift:
   dataset:
-    name: "NEMO dataset"       # Dataset name used by OpenDrift
-  log_level: 0              # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
+    name: "NEMO dataset"          # Dataset name used by OpenDrift
+  log_level: 0                   # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
   seeding:
-    lat: 77           # Initial latitude of particles
-    lon: -136                       # Initial longitude of particles
-    number: 1000                # Number of particles
-    radius: 100               # Initial release radius in meters
-    z: 0                        # Initial depth (0 = surface)
+    lat: 74                       # Initial latitude of particles
+    lon: -125                     # Initial longitude of particles
+    number: 10                   # Number of particles
+    radius: 0                   # Initial release radius in meters
+    z: -10                         # first X meters of water column
     # time: "2006-01-03T00:00"    # Simulation start time. Default: start time of the input data.
-    oil_type: "GENERIC DIESEL"  # Type of oil
+    oil_type: "GENERIC DIESEL"    # Type of oil
 
 # =============================================
 # Data transformation
@@ -57,9 +61,10 @@ transformation:
     x_wind:
       x_wind:
         standard_name: x_wind
+        units: meter second-1
       time:
         standard_name: time
-        units: hours since 2006-01-01 00:00:00
+        units: hours since 2002-01-01 00:00:00
       lon:
         standard_name: lon
       lat:
@@ -67,10 +72,14 @@ transformation:
     y_wind:
       y_wind:
         standard_name: y_wind
+        units: meter second-1
       time:
         standard_name: time
-        units: hours since 2006-01-01 00:00:00
+        units: hours since 2002-01-01 00:00:00
       lon:
         standard_name: lon
       lat:
         standard_name: lat
+    mask:
+      mbathy:
+        standard_name: sea_floor_depth_below_sea_level

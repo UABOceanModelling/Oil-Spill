@@ -6,5 +6,5 @@ def create_directory(path: str):
 
     return os.path.abspath(path)
 
-def check_existing_file(path: str) -> bool:
+def file_exists(path: str) -> bool:
     return os.path.exists(path) and os.path.isfile(path)

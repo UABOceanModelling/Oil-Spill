@@ -1,50 +1,70 @@
 import xarray as xr
+import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 from opendrift.models.openoil import OpenOil
 
 from oil_spill.utils import create_directory
+from oil_spill.config import ConfigReader
 
 
 class Plotter:
-    def __init__(self, config, o: OpenOil):
+    def __init__(self, config: ConfigReader, o: OpenOil):
         self.directory = config.output.directory
-        self.plot_name = config.output.files['plot']
+        self.plot_name = config.output.files["plot"]
+        self.start_time = config.opendrift.seeding["time"]
+        self.end_time = config.opendrift.end_time
         self.number_of_particles = config.opendrift.seeding["number"]
         self.radius = config.opendrift.seeding["radius"]
+        self.z = config.opendrift.seeding["z"]
         self.oil_type = config.opendrift.seeding["oil_type"]
         self.o = o
-        self.animation = config.output.files['animation']
+        self.animation = config.output.files["animation"]
         self.lat = config.opendrift.seeding["lat"]
         self.lon = config.opendrift.seeding["lon"]
 
+        self.cmap = ListedColormap([cfeature.COLORS["water"], cfeature.COLORS["land"]])
+
         self.output_directory = create_directory(
             self.directory
-            + "plots/simulations/"
-            + f"lat_{self.lat}"
-            + "_"
-            + f"lon_{self.lon}"
-            + "/"
-            + self.oil_type
-            + "/"
-            + f"particles_{self.number_of_particles}-"
-            + f"radius_{self.radius}_m"
+            + "simulations/"
+            + f"{self.start_time}-{self.end_time}/"
+            + f"lat_{self.lat}_lon_{self.lon}/"
+            + f"{self.oil_type}/"
+            + f"{self.z}_m_depth/"
+            + f"particles_{self.number_of_particles}-radius_{self.radius}_m"
         )
+
 
     def plot_main(self):
         create_directory(self.output_directory + "/plots/")
         self.o.plot(
             filename=self.output_directory + "/plots/" + self.plot_name,
             linecolor="z",
-            #    buffer=1
+            # background="land_binary_mask",
+            # cmap=self.cmap,
+            # hide_landmask=True
+            # background=['x_sea_water_velocity', 'y_sea_water_velocity']
+            # background=['sea_ice_x_velocity', 'sea_ice_x_velocity']
+            # background='sea_ice_area_fraction',
+            # buffer=5
         )
 
     def create_animation(self):
         create_directory(self.output_directory + "/animations/")
         self.o.animation(
-            filename=self.output_directory + "/animations/" + self.animation, 
-            color='z',
-            fast=True
+            filename=self.output_directory + "/animations/" + self.animation,
+            # background="land_binary_mask",
+            color="z",
+            fast=True,
+            # cmap=self.cmap,
+        )
+
+    def animate_vertical_distribution(self):
+        create_directory(self.output_directory + "/animations/")
+        self.o.animate_vertical_distribution(
+            filename=self.output_directory + "/animations/vertical_distribution/vertical_distribution.mp4"
         )
 
     def plot_property(self, property_name: str):
@@ -53,7 +73,7 @@ class Plotter:
             property_name,
             filename=self.output_directory + "/plots/properties/" + property_name + ".png",
         )
-    
+
     def plot_oil_budget(self):
         create_directory(self.output_directory + "/plots/budget/")
         self.o.plot_oil_budget(

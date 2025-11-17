@@ -1,0 +1,87 @@
+# =============================================
+# Experiment metadata
+# =============================================
+experiment:
+  name: "oil_spill_simulation"
+  description: "Oil spill simulation for January 2002, ANHA4"
+  date: "2002-07"
+
+# =============================================
+# Input/Output configuration
+# =============================================
+input:
+  # nemo: /home/caion/projects/rrg-pmyers-ad/caio/DatasetHarmonizer/output/x_116_430-y_520_750/2002/combined_ds-y****m**d**.nc
+  # nemo: /home/caion/projects/rrg-pmyers-ad/caio/DatasetHarmonizer/output/x_116_430-y_520_750/2002/combined_ds-y2002m01.nc
+  nemo: /home/caion/projects/rrg-pmyers-ad/caio/DatasetHarmonizer/output/x_116_430-y_520_750/2002/combined_ds-y2002m**.nc
+  x_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/u10_gdps_y2002.nc
+  y_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/v10_gdps_y2002.nc
+  mask: /home/caion/projects/rrg-pmyers-ad/ANHA4-I/ANHA4_mesh_mask.nc 
+output:
+  directory: output/  # Directory to save output files
+  # directory: test-output/  # Directory to save output files
+  files:
+    netcdf: "oil_spill.nc"            # NetCDF result file
+    plot: "oil_spill.png"             # Static plot
+    animation: "oil_spill.mp4"        # Spill animation
+    log: "oil_spill.log"              # Log file
+
+# =============================================
+# OpenDrift configuration
+# =============================================
+# Only provide parameters you want to override; all others use OpenDrift defaults.
+opendrift:
+  dataset:
+    name: "NEMO dataset"          # Dataset name used by OpenDrift
+  log_level: 0                   # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
+  seeding:
+    lat: 75                       # Initial latitude of particles
+    lon: -125                     # Initial longitude of particles
+    number: 10000                   # Number of particles
+    radius: 100                   # Initial release radius in meters
+    z: -50                         # first X meters of water column
+    # time: "2006-01-03T00:00"    # Simulation start time. Default: start time of the input data.
+    oil_type: "GENERIC DIESEL"    # Type of oil
+
+# =============================================
+# Data transformation
+# =============================================
+transformation:
+  renaming_mappings:
+    x_wind:
+      u_wind: x_wind
+      TIME: time
+      LON: lon
+      LAT: lat
+    y_wind:
+      v_wind: y_wind
+      TIME: time
+      LON: lon
+      LAT: lat
+  attributes_to_add:
+    x_wind:
+      x_wind:
+        standard_name: x_wind
+        units: meter second-1
+      time:
+        standard_name: time
+        units: hours since 2002-01-01 00:00:00
+      lon:
+        standard_name: lon
+      lat:
+        standard_name: lat
+    y_wind:
+      y_wind:
+        standard_name: y_wind
+        units: meter second-1
+      time:
+        standard_name: time
+        units: hours since 2002-01-01 00:00:00
+      lon:
+        standard_name: lon
+      lat:
+        standard_name: lat
+    mask:
+      mbathy:
+        standard_name: sea_floor_depth_below_sea_level
+      tmask:
+        standard_name: land_binary_mask
