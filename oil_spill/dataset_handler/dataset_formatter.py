@@ -59,10 +59,20 @@ class DatasetFormatter:
         variables_to_drop = self.variables_to_drop[ds_name]
         return ds.drop_vars(variables_to_drop)
 
+    # TODO: temporary method to fix hdf5 reading issues
+    def __remove_time_counter_dimension_from_variables_that_are_equal_along_this_dimension(self, ds: xr.Dataset):
+        ds["lat"] = ds["lat"].isel(time_counter=0)
+        ds["lon"] = ds["lon"].isel(time_counter=0)
+        ds["mbathy"] = ds["mbathy"].isel(time_counter=0).squeeze()
+        ds["tmask"] = ds["tmask"].isel(time_counter=0)
+
+        return ds
+
     def transform_data(self, ds_name: str, ds: xr.Dataset, paths: list) -> xr.Dataset:
         ds = self.__rename_variables(ds_name, ds)
         ds = self.__add_attributes(ds_name, ds)
         ds = self.__drop_variables(ds_name, ds)
+        # ds = self.__remove_time_counter_dimension_from_variables_that_are_equal_along_this_dimension(ds)
         ds = self.__format_time(ds_name, ds, paths)
 
         return ds

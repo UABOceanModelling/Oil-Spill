@@ -44,11 +44,11 @@ class Plotter:
             linecolor="z",
             # background="land_binary_mask",
             # cmap=self.cmap,
-            # hide_landmask=True
+            # hide_landmask=True,
             # background=['x_sea_water_velocity', 'y_sea_water_velocity']
             # background=['sea_ice_x_velocity', 'sea_ice_x_velocity']
             # background='sea_ice_area_fraction',
-            # buffer=5
+            # buffer=0.5
         )
 
     def create_animation(self):

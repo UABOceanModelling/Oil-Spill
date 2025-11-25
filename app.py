@@ -1,6 +1,6 @@
 from oil_spill import main
 
-CONFIG_FOLDER = "experiments/"
+EXPERIMENT_FILE = "experiments/70-135-1000particles.yaml"
 
 if __name__ == "__main__":
-    main(CONFIG_FOLDER)
+    main(EXPERIMENT_FILE)
