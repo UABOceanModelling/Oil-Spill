@@ -31,7 +31,7 @@ def run_simulation(readers: List[Reader], config: ConfigReader, o: OpenOil):
 
     o.seed_elements(**seeding_config)
 
-    directory = config.output.directory
+    out_dir = config.output.directory
     lat = config.opendrift.seeding["lat"]
     lon = config.opendrift.seeding["lon"]
     oil_type = config.opendrift.seeding["oil_type"]
@@ -43,16 +43,13 @@ def run_simulation(readers: List[Reader], config: ConfigReader, o: OpenOil):
     time_step = config.opendrift.time_step
 
     output_directory = create_directory(
-        directory
+        out_dir
         + "simulations/"
         + f"{start_time}-{end_time}/"
-        + f"lat_{lat}_lon_{lon}/"
-        + f"{oil_type}/"
-        + f"{z_file}_m_depth/"
-        + f"particles_{number_of_particles}-radius_{radius}_m"
     )
 
-    outfile_path = create_directory(output_directory + "/ncfiles") + "/" + config.output.files["netcdf"]
+    file_name = f"simulation_{oil_type}_lat_{lat}_lon_{lon}_{number_of_particles}_particles.nc"
+    outfile_path = create_directory(output_directory + "/ncfiles") + "/" + file_name
 
     o.run(end_time=end_time, time_step=timedelta(minutes=time_step), outfile=outfile_path)
     return o

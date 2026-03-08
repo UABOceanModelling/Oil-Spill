@@ -56,12 +56,16 @@ def main(file: str):
             #     ds = df.transform_data(name, ds, [path])
             #     readers.append(Reader(ds, name=path))
             #     ds.close()
-            raise ValueError(f"Unknown read data mode {read_data_mode}. Options are: together, separately.")
+            raise ValueError(
+                f"Unknown read data mode {read_data_mode}. Options are: together, separately."
+            )
         else:
-            raise ValueError(f"Unknown read data mode {read_data_mode}. Options are: together, separately.")
+            raise ValueError(
+                f"Unknown read data mode {read_data_mode}. Options are: together, separately."
+            )
 
     o = OpenOil(loglevel=config.opendrift.log_level)
-    # o = opendrift.open("/home/caion/projects/rrg-pmyers-ad/caio/Oil-Spill/output/simulations/2002-07-01 12:00:00-2023-07-01 12:00:00/lat_68_lon_-114/GENERIC DIESEL/0_m_depth/particles_10000-radius_100_m/ncfiles/oil_spill.nc")
+    # o = opendrift.open("/home/caion/projects/rrg-pmyers-ad/caio/Oil-Spill/old_library-output/simulations/2002-07-01 12:00:00-2003-07-01 12:00:00/lat_68_lon_-114/GENERIC DIESEL/0_m_depth/particles_5000-radius_100_m/ncfiles/oil_spill.nc")
     o = run_simulation(readers, config, o)
     # plot_results(config, o)
 

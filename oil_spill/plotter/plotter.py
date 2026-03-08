@@ -26,21 +26,14 @@ class Plotter:
 
         self.cmap = ListedColormap([cfeature.COLORS["water"], cfeature.COLORS["land"]])
 
-        self.output_directory = create_directory(
-            self.directory
-            + "simulations/"
-            + f"{self.start_time}-{self.end_time}/"
-            + f"lat_{self.lat}_lon_{self.lon}/"
-            + f"{self.oil_type}/"
-            + f"{self.z}_m_depth/"
-            + f"particles_{self.number_of_particles}-radius_{self.radius}_m"
-        )
-
+        self.output_directory = create_directory(self.directory + "simulations/" + f"{self.start_time}-{self.end_time}/")
 
     def plot_main(self):
         create_directory(self.output_directory + "/plots/")
         self.o.plot(
-            filename=self.output_directory + "/plots/" + self.plot_name,
+            filename=self.output_directory
+            + "/plots/"
+            + f"trajectories_{self.oil_type}_lat_{self.lat}_lon_{self.lon}_{self.number_of_particles}_particles.png",
             linecolor="z",
             # background="land_binary_mask",
             # cmap=self.cmap,
@@ -64,20 +57,26 @@ class Plotter:
     def animate_vertical_distribution(self):
         create_directory(self.output_directory + "/animations/")
         self.o.animate_vertical_distribution(
-            filename=self.output_directory + "/animations/vertical_distribution/vertical_distribution.mp4"
+            filename=self.output_directory
+            + "/animations/"
+            + f"vertical_distribution_{self.oil_type}_lat_{self.lat}_lon_{self.lon}_{self.number_of_particles}_particles.png",
         )
 
     def plot_property(self, property_name: str):
         create_directory(self.output_directory + "/plots/properties/")
         self.o.plot_property(
             property_name,
-            filename=self.output_directory + "/plots/properties/" + property_name + ".png",
+            filename=self.output_directory
+            + "/plots/properties/"
+            + f"{property_name}_{self.oil_type}_lat_{self.lat}_lon_{self.lon}_{self.number_of_particles}_particles.png",
         )
 
     def plot_oil_budget(self):
         create_directory(self.output_directory + "/plots/budget/")
         self.o.plot_oil_budget(
-            filename=self.output_directory + "/plots/budget/oil_budget.png",
+            filename=self.output_directory
+            + "/plots/budget/"
+            + f"oil_budget_{self.oil_type}_lat_{self.lat}_lon_{self.lon}_{self.number_of_particles}_particles.png",
         )
 
     @staticmethod

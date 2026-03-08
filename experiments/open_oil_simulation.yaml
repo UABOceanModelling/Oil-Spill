@@ -10,12 +10,11 @@ experiment:
 # Input/Output configuration
 # =============================================
 input:
-  nemo: /home/caion/projects/rrg-pmyers-ad/caio/DatasetHarmonizer/output/x_0_593-y_330_799/combined_ds-y20**m**.nc
-  x_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/u10_gdps_y20**.nc
-  y_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/v10_gdps_y20**.nc
+  nemo: /home/caion/projects/rrg-pmyers-ad/caio/DatasetHarmonizer/output/x_0_593-y_330_799/combined_ds-y200*.nc
+  x_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/u10_gdps_y200*.nc
+  y_wind: /project/6007519/ANHA4-I/ATMFORCING/CGRF/v10_gdps_y200*.nc
 output:
   directory: output/  # Directory to save output files
-  # directory: test-output/  # Directory to save output files
   files:
     netcdf: "oil_spill.nc"            # NetCDF result file
     plot: "oil_spill.png"             # Static plot
@@ -30,13 +29,13 @@ opendrift:
   dataset:
     name: "NEMO dataset"          # Dataset name used by OpenDrift
   log_level: 20                   # Logging level (0=DEBUG, 20=INFO, 30=WARNING, 40=ERROR)
-  end_time: 2002-07-11 12:00:00
+  end_time: 2002-07-02 12:00:00
   time_step: 60                   # in minutes
   seeding:
-    lat: 70                       # Initial latitude of particles
-    lon: -135                     # Initial longitude of particles
-    number: 1000                   # Number of particles
-    radius: 100                   # Initial release radius in meters
+    lat: 68                       # Initial latitude of particles
+    lon: -114                     # Initial longitude of particles
+    number: 1                   # Number of particles
+    radius: 1                   # Initial release radius in meters
     z: 0                         # first X meters of water column
     time: 2002-07-01 12:00:00     # start time
     oil_type: "GENERIC DIESEL"    # Type of oil
@@ -50,28 +49,38 @@ xarray:
       read_data_mode: together
       open_dataset_params:
         combine: by_coords
-        data_vars: all
+        data_vars: minimal
+        coords: minimal
         decode_cf: False
         chunks:
           time_counter: 1
+          depth: 50
+          Y: 469
+          X: 544
     x_wind:
       read_data_mode: together
       open_dataset_params:
         combine: nested
         concat_dim: TIME
-        data_vars: all
+        data_vars: minimal
+        coords: minimal
         decode_cf: False
         chunks:
           TIME: 1
+          lat: 368
+          lon: 801
     y_wind: 
       read_data_mode: together
       open_dataset_params:
         combine: nested
         concat_dim: TIME
-        data_vars: all
+        data_vars: minimal
+        coords: minimal
         decode_cf: False
         chunks:
           TIME: 1
+          lat: 368
+          lon: 801
 
 # =============================================
 # Data transformation
@@ -110,6 +119,6 @@ transformation:
       lat:
         standard_name: lat
   variables_to_drop:
-    nemo: ["ice_concentration", "ice_thickness", "ice_u", "ice_v"]
+    nemo: ["ice_concentration", "ice_thickness", "ice_u", "ice_v", "tmask"]
   datasets_to_format_time: [x_wind, y_wind]
     

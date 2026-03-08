@@ -68,11 +68,15 @@ class DatasetFormatter:
 
         return ds
 
+    def __squeeze_ds(self, ds: xr.Dataset):
+        return ds.squeeze()
+
     def transform_data(self, ds_name: str, ds: xr.Dataset, paths: list) -> xr.Dataset:
         ds = self.__rename_variables(ds_name, ds)
         ds = self.__add_attributes(ds_name, ds)
         ds = self.__drop_variables(ds_name, ds)
         # ds = self.__remove_time_counter_dimension_from_variables_that_are_equal_along_this_dimension(ds)
+        ds = self.__squeeze_ds(ds)
         ds = self.__format_time(ds_name, ds, paths)
 
         return ds
