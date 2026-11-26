@@ -1,7 +1,16 @@
 __pycache__/
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+build/
+dist/
+
+# data and results
 data/*
 output/*
+output.txt
 *.png
 *.mp4
 *.nc
-*.txt
+*.log

@@ -1,0 +1,17 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # The tests do not need OpenDrift, so install only the light dependencies.
+      - run: pip install pytest xarray netCDF4 pyyaml numpy
+      - run: python -m pytest

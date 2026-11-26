@@ -1,1 +1,1 @@
-from oil_spill.main import main
+"""Oil spill simulations with OpenDrift (NEMO and other ocean datasets)."""
