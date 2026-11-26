@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oil_spill"
+version = "0.1.0"
+description = "Oil spill simulations with OpenDrift using NEMO (and other) ocean datasets."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "opendrift",
+    "xarray",
+    "netCDF4",
+    "pyyaml",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+oil-spill = "oil_spill.main:cli"
+
+[tool.setuptools.packages.find]
+include = ["oil_spill*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
